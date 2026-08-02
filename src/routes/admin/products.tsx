@@ -110,7 +110,7 @@ function AdminProductsPage() {
     mutationFn: async () => {
       if (!editing) return;
       const slug = editing.slug || `perfume-${Date.now()}`;
-      const payload = { ...editing, slug };
+      const { versions: _v, gallery: _g, ...payload } = { ...editing, slug };
 
       let perfumeId = editing.id;
       if (isNew) {

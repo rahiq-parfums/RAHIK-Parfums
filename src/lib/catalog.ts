@@ -11,11 +11,14 @@ export type Bilingual = { ar: string; en: string };
 
 export type BadgeKey = "original" | "ordinary" | "fois2" | "fois3";
 
+export type VersionLabel = { ar: string; en: string };
+
 export type Perfume = {
   id: string;
   name: Bilingual;
   image: string;
   badges: BadgeKey[];
+  versions: VersionLabel[];
   ratings: {
     seasons: { spring: number; summer: number; autumn: number; winter: number };
     time: { day: number; night: number };

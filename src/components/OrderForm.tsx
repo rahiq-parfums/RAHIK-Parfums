@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { useDeliveryPrices } from "@/lib/data";
 import { WILAYAS } from "@/lib/algeria";
@@ -37,6 +37,7 @@ export function OrderForm({ offer }: { offer: OfferProp }) {
   const [quantity, setQuantity] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; msg: string } | null>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
 
   const unitPrice = getEffectivePrice(offer);
   const isFreeDelivery = offer.freeDelivery;
@@ -86,6 +87,7 @@ export function OrderForm({ offer }: { offer: OfferProp }) {
     setSubmitting(false);
     setResult({ ok: res.success, msg: res.success ? t("order.success") : res.message });
     if (res.success) {
+      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }), 100);
       setFullName("");
       setPhone("");
       setWilayaCode("");
@@ -259,7 +261,7 @@ export function OrderForm({ offer }: { offer: OfferProp }) {
           disabled={submitting}
           className="w-full rounded-xl bg-primary px-6 py-5 text-base font-bold tracking-[0.14em] text-primary-foreground transition-all duration-300 hover:opacity-90 disabled:opacity-50"
         >
-          {submitting ? t("order.submitting") : t("order.submitNow")}
+          {submitting ? t("order.submitting") : t("order.confirm")}
         </button>
       </form>
 
@@ -310,6 +312,8 @@ export function OrderForm({ offer }: { offer: OfferProp }) {
           {result.msg}
         </p>
       )}
+
+      <div ref={bottomRef} />
     </div>
   );
 }

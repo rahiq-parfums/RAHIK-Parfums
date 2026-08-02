@@ -34,7 +34,7 @@ export function PerfumeCard({ perfume }: { perfume: Perfume }) {
         </h2>
 
         <div className="mt-3">
-          <PerfumeBadges badges={perfume.badges} />
+          <PerfumeBadges versions={perfume.versions} />
         </div>
 
         <span className="mx-auto mt-6 block h-px w-10 bg-primary/50" aria-hidden="true" />

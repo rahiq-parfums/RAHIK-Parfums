@@ -40,6 +40,9 @@ function dbPerfumeToCatalog(p: DbPerfume): Perfume {
     badges: p.perfume_versions
       .sort((a, b) => a.display_order - b.display_order)
       .map((v) => v.label_en.toLowerCase().replace(/\s+/g, "") as any),
+    versions: p.perfume_versions
+      .sort((a, b) => a.display_order - b.display_order)
+      .map((v) => ({ ar: v.label_ar, en: v.label_en })),
     ratings: {
       seasons: {
         spring: p.rating_spring,
