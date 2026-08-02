@@ -18,6 +18,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { useState } from "react";
+import AdminAuth from "./AdminAuth";
 
 const NAV_ITEMS = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
@@ -71,6 +72,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
+  <AdminAuth>
     <div className="min-h-screen bg-muted/30">
       {/* Mobile overlay */}
       {sidebarOpen && (
@@ -334,5 +336,6 @@ export function SaveBar({
         <span className="text-xs text-green-600 font-medium">Saved successfully</span>
       )}
     </div>
-  );
+  </AdminAuth>
+);
 }
