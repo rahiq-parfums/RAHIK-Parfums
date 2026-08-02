@@ -105,6 +105,22 @@ Deno.serve(async (req: Request) => {
   }
 });
 
+function base64Encode(s: string): string {
+  const bytes = new TextEncoder().encode(s);
+  let binary = "";
+  for (const b of bytes) {
+    binary += String.fromCharCode(b);
+  }
+  return btoa(binary);
+}
+
+function encodeHeader(s: string): string {
+  if (/[^\x00-\x7F]/.test(s)) {
+    return `=?UTF-8?B?${base64Encode(s)}?=`;
+  }
+  return s;
+}
+
 async function sendViaSmtp(opts: {
   host: string;
   port: number;
@@ -114,40 +130,103 @@ async function sendViaSmtp(opts: {
   subject: string;
   body: string;
 }): Promise<boolean> {
-  const { SmtpClient } = await import("https://deno.land/x/smtp@v0.7.0/mod.ts");
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
+  const buf = new Uint8Array(4096);
+  let conn: Deno.Conn;
+  let readBuffer = "";
 
-  const client = new SmtpClient();
+  async function readLine(): Promise<string> {
+    while (true) {
+      const idx = readBuffer.indexOf("\r\n");
+      if (idx >= 0) {
+        const line = readBuffer.slice(0, idx);
+        readBuffer = readBuffer.slice(idx + 2);
+        return line;
+      }
+      const n = await conn.read(buf);
+      if (n === null) throw new Error("Connection closed by server");
+      readBuffer += decoder.decode(buf.subarray(0, n));
+    }
+  }
+
+  async function readResponse(): Promise<string> {
+    const lines: string[] = [];
+    while (true) {
+      const line = await readLine();
+      lines.push(line);
+      if (/^\d{3} /.test(line)) break;
+    }
+    return lines.join("\r\n");
+  }
+
+  async function write(s: string): Promise<void> {
+    await conn.write(encoder.encode(s + "\r\n"));
+  }
+
   try {
-    await client.connect({
-      hostname: opts.host,
-      port: opts.port,
-      username: opts.email,
-      password: opts.password,
-      useTLS: opts.port === 465,
-      useSTARTTLS: opts.port !== 465,
-    });
+    if (opts.port === 465) {
+      conn = await Deno.connectTls({ hostname: opts.host, port: opts.port });
+    } else {
+      conn = await Deno.connect({ hostname: opts.host, port: opts.port });
+    }
 
-    await client.send({
-      from: opts.email,
-      to: opts.to,
-      subject: opts.subject,
-      content: opts.body,
-      html: `<pre style="font-family: monospace; white-space: pre-wrap;">${escapeHtml(opts.body)}</pre>`,
-    });
+    await readResponse();
 
-    client.close();
+    await write("EHLO rahiqparfums.dz");
+    await readResponse();
+
+    if (opts.port !== 465) {
+      await write("STARTTLS");
+      await readResponse();
+      conn = await Deno.startTls(conn, { hostname: opts.host });
+      readBuffer = "";
+      await write("EHLO rahiqparfums.dz");
+      await readResponse();
+    }
+
+    await write("AUTH LOGIN");
+    await readResponse();
+    await write(base64Encode(opts.email));
+    await readResponse();
+    await write(base64Encode(opts.password));
+    const authResp = await readResponse();
+    if (!/^235/.test(authResp)) {
+      throw new Error("SMTP authentication failed");
+    }
+
+    await write(`MAIL FROM:<${opts.email}>`);
+    await readResponse();
+
+    await write(`RCPT TO:<${opts.to}>`);
+    await readResponse();
+
+    await write("DATA");
+    await readResponse();
+
+    const headers = [
+      `From: ${opts.email}`,
+      `To: ${opts.to}`,
+      `Subject: ${encodeHeader(opts.subject)}`,
+      `MIME-Version: 1.0`,
+      `Content-Type: text/plain; charset=UTF-8`,
+      `Content-Transfer-Encoding: base64`,
+      ``,
+    ].join("\r\n");
+
+    const encodedBody = base64Encode(opts.body);
+    const emailContent = headers + encodedBody + "\r\n.\r\n";
+    await conn.write(encoder.encode(emailContent));
+    await readResponse();
+
+    await write("QUIT");
+    try { await readResponse(); } catch { /* server may close immediately */ }
+
     return true;
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error("[send-order-email] SMTP error:", message);
-    try { client.close(); } catch { /* ignore */ }
+    console.error("[send-order-email] SMTP error:", err instanceof Error ? err.message : String(err));
     return false;
+  } finally {
+    try { conn!.close(); } catch { /* ignore */ }
   }
-}
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
 }

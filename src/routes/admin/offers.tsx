@@ -89,12 +89,14 @@ function AdminOffersPage() {
       const payload = { ...editing, slug };
       let offerId = editing.id;
 
+      const { gallery: _g, includes: _i, perfumes: _p, ...offerFields } = payload;
+
       if (isNew) {
-        const { data, error } = await supabase.from("offers").insert(payload).select("id").single();
+        const { data, error } = await supabase.from("offers").insert(offerFields).select("id").single();
         if (error) throw error;
         offerId = data.id;
       } else {
-        const { error } = await supabase.from("offers").update(payload).eq("id", editing.id!);
+        const { error } = await supabase.from("offers").update(offerFields).eq("id", editing.id!);
         if (error) throw error;
       }
 
