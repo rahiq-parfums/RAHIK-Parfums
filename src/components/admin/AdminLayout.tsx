@@ -1,3 +1,4 @@
+import AdminAuth from "./AdminAuth";
 import type { ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
@@ -18,7 +19,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { useState } from "react";
-import AdminAuth from "./AdminAuth";
+import { supabase } from "@/lib/supabase";
 
 const NAV_ITEMS = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
@@ -68,8 +69,14 @@ function NavLink({
   );
 }
 
+
+
 export function AdminLayout({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    window.location.href = "/login";
+  }
 
   return (
   <AdminAuth>
@@ -122,6 +129,12 @@ export function AdminLayout({ children }: { children: ReactNode }) {
             <ExternalLink className="h-4 w-4" />
             <span>View Website</span>
           </Link>
+          <button
+            onClick={handleLogout}
+            className="mt-2 flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          >
+            <span>Logout</span> 
+          </button>
         </div>
       </aside>
 
@@ -145,6 +158,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
         </main>
       </div>
     </div>
+    </AdminAuth>
   );
 }
 
@@ -336,6 +350,5 @@ export function SaveBar({
         <span className="text-xs text-green-600 font-medium">Saved successfully</span>
       )}
     </div>
-  </AdminAuth>
-);
+  );
 }
