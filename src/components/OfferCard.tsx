@@ -116,10 +116,25 @@ export function OfferCard({
         </div>
 
         {showTimer && timeLeft && (
-          <div className="mt-4 rounded-lg border border-dashed border-border/80 bg-muted/40 px-3 py-2.5">
-            <span className="block text-sm font-normal tracking-[0.12em] text-muted-foreground">
-              {String(timeLeft.days).padStart(2, "0")} : {String(timeLeft.hours).padStart(2, "0")} : {String(timeLeft.minutes).padStart(2, "0")} : {String(timeLeft.seconds).padStart(2, "0")}
-            </span>
+          <div
+            dir="ltr"
+            className="mt-4 flex justify-center gap-3 rounded-lg border border-dashed border-border/80 bg-muted/40 px-3 py-2.5"
+          >
+            {[
+              { value: timeLeft.days, label: t("discounts.timerDays") },
+              { value: timeLeft.hours, label: t("discounts.timerHours") },
+              { value: timeLeft.minutes, label: t("discounts.timerMinutes") },
+              { value: timeLeft.seconds, label: t("discounts.timerSeconds") },
+            ].map((unit, i) => (
+              <div key={i} className="flex flex-col items-center">
+                <span className="text-sm font-semibold tabular-nums tracking-[0.12em] text-foreground">
+                  {String(unit.value).padStart(2, "0")}
+                </span>
+                <span className="mt-0.5 text-[0.6rem] font-normal tracking-[0.08em] text-muted-foreground">
+                  {unit.label}
+                </span>
+              </div>
+            ))}
           </div>
         )}
 

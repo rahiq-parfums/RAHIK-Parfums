@@ -83,6 +83,10 @@ const translations: Record<Language, Dict> = {
     "discounts.placeholder": "وصف مختصر للتخفيض يُضاف لاحقًا.",
     "discounts.endsIn": "ينتهي العرض خلال",
     "discounts.timerPlaceholder": "00 : 00 : 00",
+    "discounts.timerDays": "الأيام",
+    "discounts.timerHours": "الساعات",
+    "discounts.timerMinutes": "الدقائق",
+    "discounts.timerSeconds": "الثواني",
 
     "offerDetails.included": "ما الذي ستحصل عليه",
     "offerDetails.contents": "محتويات الباقة",
@@ -291,6 +295,10 @@ const translations: Record<Language, Dict> = {
     "discounts.placeholder": "A short discount description will be added later.",
     "discounts.endsIn": "Offer ends in",
     "discounts.timerPlaceholder": "00 : 00 : 00",
+    "discounts.timerDays": "Days",
+    "discounts.timerHours": "Hours",
+    "discounts.timerMinutes": "Minutes",
+    "discounts.timerSeconds": "Seconds",
 
     "offerDetails.included": "What you will receive",
     "offerDetails.contents": "Package Contents",
