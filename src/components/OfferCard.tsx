@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useLocalized } from "@/lib/use-localized";
 import { useI18n } from "@/lib/i18n";
@@ -7,8 +8,32 @@ import type { Offer } from "@/lib/catalog";
 
 type OfferWithDiscount = Offer & {
   freeDelivery?: boolean;
-  discount?: { enabled: boolean; newPrice: number; oldPrice: number; showCountdown?: boolean };
+  discount?: { enabled: boolean; newPrice: number; oldPrice: number; showCountdown?: boolean; endDate?: string | null };
 };
+
+type TimeLeft = { days: number; hours: number; minutes: number; seconds: number } | null;
+
+function useCountdown(endDate: string | null | undefined): TimeLeft {
+  const calc = () => {
+    if (!endDate) return null;
+    const diff = new Date(endDate).getTime() - Date.now();
+    if (isNaN(diff) || diff <= 0) return null;
+    return {
+      days: Math.floor(diff / 86_400_000),
+      hours: Math.floor((diff / 3_600_000) % 24),
+      minutes: Math.floor((diff / 60_000) % 60),
+      seconds: Math.floor((diff / 1000) % 60),
+    };
+  };
+  const [left, setLeft] = useState<TimeLeft>(calc);
+  useEffect(() => {
+    setLeft(calc());
+    const id = setInterval(() => setLeft(calc()), 1000);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [endDate]);
+  return left;
+}
 
 function effectivePrice(offer: OfferWithDiscount) {
   if (offer.discount?.enabled && offer.discount.newPrice > 0) return offer.discount.newPrice;
@@ -41,6 +66,9 @@ export function OfferCard({
 
   const discountPct =
     oldP != null && oldP > price ? Math.round(((oldP - price) / oldP) * 100) : 0;
+
+  const showTimer = withCountdown && offer.discount?.showCountdown && offer.discount?.enabled;
+  const timeLeft = useCountdown(showTimer ? offer.discount?.endDate : null);
 
   return (
     <Link
@@ -87,10 +115,10 @@ export function OfferCard({
           />
         </div>
 
-        {withCountdown && (
+        {showTimer && timeLeft && (
           <div className="mt-4 rounded-lg border border-dashed border-border/80 bg-muted/40 px-3 py-2.5">
             <span className="block text-sm font-normal tracking-[0.12em] text-muted-foreground">
-              00 : 00 : 00
+              {String(timeLeft.days).padStart(2, "0")} : {String(timeLeft.hours).padStart(2, "0")} : {String(timeLeft.minutes).padStart(2, "0")} : {String(timeLeft.seconds).padStart(2, "0")}
             </span>
           </div>
         )}
