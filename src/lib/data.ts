@@ -107,7 +107,8 @@ export function dbOfferToCatalog(o: DbOffer): Offer & {
   isVisible: boolean;
   discount?: { enabled: boolean; oldPrice: number; newPrice: number; showCountdown: boolean; endDate: string | null };
 } {
-  const discount = o.discounts?.[0];
+  const discountArr = Array.isArray(o.discounts) ? o.discounts : o.discounts ? [o.discounts] : [];
+  const discount = discountArr[0];
   const allImages = [
     o.main_image,
     ...o.offer_gallery.sort((a, b) => a.display_order - b.display_order).map((g) => g.image_url),
