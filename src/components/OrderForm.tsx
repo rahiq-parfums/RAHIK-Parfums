@@ -90,11 +90,8 @@ export function OrderForm({ offer }: { offer: OfferProp }) {
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }), 100);
       setFullName("");
       setPhone("");
-      setWilayaCode("");
-      setCommune("");
       setManualCommune("");
       setUseManualCommune(false);
-      setQuantity(1);
     }
   }
 
@@ -303,7 +300,7 @@ export function OrderForm({ offer }: { offer: OfferProp }) {
       {result && (
         <p
           className={cn(
-            "rounded-lg border px-5 py-4 text-center text-base font-normal",
+            "mb-28 rounded-lg border px-5 py-4 text-center text-base font-normal sm:mb-32",
             result.ok
               ? "border-primary/30 bg-accent text-accent-foreground"
               : "border-destructive/30 bg-destructive/10 text-destructive",
