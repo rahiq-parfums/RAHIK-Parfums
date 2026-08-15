@@ -14,6 +14,7 @@ import { Route as ContactRouteImport } from './routes/contact'
 import { Route as DiscountsRouteImport } from './routes/discounts'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as OffersRouteImport } from './routes/offers'
+import { Route as OrderSuccessRouteImport } from './routes/order-success'
 import { Route as PerfumesRouteImport } from './routes/perfumes'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminAlgeriaRouteImport } from './routes/admin/algeria'
@@ -50,6 +51,11 @@ const LoginRoute = LoginRouteImport.update({
 const OffersRoute = OffersRouteImport.update({
   id: '/offers',
   path: '/offers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrderSuccessRoute = OrderSuccessRouteImport.update({
+  id: '/order-success',
+  path: '/order-success',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PerfumesRoute = PerfumesRouteImport.update({
@@ -119,6 +125,7 @@ export interface FileRoutesByFullPath {
   '/discounts': typeof DiscountsRoute
   '/login': typeof LoginRoute
   '/offers': typeof OffersRouteWithChildren
+  '/order-success': typeof OrderSuccessRoute
   '/perfumes': typeof PerfumesRoute
   '/admin/algeria': typeof AdminAlgeriaRoute
   '/admin/contacts': typeof AdminContactsRoute
@@ -138,6 +145,7 @@ export interface FileRoutesByTo {
   '/discounts': typeof DiscountsRoute
   '/login': typeof LoginRoute
   '/offers': typeof OffersRouteWithChildren
+  '/order-success': typeof OrderSuccessRoute
   '/perfumes': typeof PerfumesRoute
   '/admin/algeria': typeof AdminAlgeriaRoute
   '/admin/contacts': typeof AdminContactsRoute
@@ -158,6 +166,7 @@ export interface FileRoutesById {
   '/discounts': typeof DiscountsRoute
   '/login': typeof LoginRoute
   '/offers': typeof OffersRouteWithChildren
+  '/order-success': typeof OrderSuccessRoute
   '/perfumes': typeof PerfumesRoute
   '/admin/algeria': typeof AdminAlgeriaRoute
   '/admin/contacts': typeof AdminContactsRoute
@@ -179,6 +188,7 @@ export interface FileRouteTypes {
     | '/discounts'
     | '/login'
     | '/offers'
+    | '/order-success'
     | '/perfumes'
     | '/admin/algeria'
     | '/admin/contacts'
@@ -198,6 +208,7 @@ export interface FileRouteTypes {
     | '/discounts'
     | '/login'
     | '/offers'
+    | '/order-success'
     | '/perfumes'
     | '/admin/algeria'
     | '/admin/contacts'
@@ -217,6 +228,7 @@ export interface FileRouteTypes {
     | '/discounts'
     | '/login'
     | '/offers'
+    | '/order-success'
     | '/perfumes'
     | '/admin/algeria'
     | '/admin/contacts'
@@ -237,6 +249,7 @@ export interface RootRouteChildren {
   DiscountsRoute: typeof DiscountsRoute
   LoginRoute: typeof LoginRoute
   OffersRoute: typeof OffersRouteWithChildren
+  OrderSuccessRoute: typeof OrderSuccessRoute
   PerfumesRoute: typeof PerfumesRoute
   AdminAlgeriaRoute: typeof AdminAlgeriaRoute
   AdminContactsRoute: typeof AdminContactsRoute
@@ -285,6 +298,13 @@ declare module '@tanstack/react-router' {
       path: '/offers'
       fullPath: '/offers'
       preLoaderRoute: typeof OffersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/order-success': {
+      id: '/order-success'
+      path: '/order-success'
+      fullPath: '/order-success'
+      preLoaderRoute: typeof OrderSuccessRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/perfumes': {
@@ -391,6 +411,7 @@ const rootRouteChildren: RootRouteChildren = {
   DiscountsRoute: DiscountsRoute,
   LoginRoute: LoginRoute,
   OffersRoute: OffersRouteWithChildren,
+  OrderSuccessRoute: OrderSuccessRoute,
   PerfumesRoute: PerfumesRoute,
   AdminAlgeriaRoute: AdminAlgeriaRoute,
   AdminContactsRoute: AdminContactsRoute,
