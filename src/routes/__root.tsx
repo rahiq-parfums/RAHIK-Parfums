@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { I18nProvider } from "@/lib/i18n";
+import { meta } from "@/lib/meta";
 
 function NotFoundComponent() {
   return (
@@ -120,29 +121,12 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="ar" dir="rtl">
       <head>
         <HeadContent />
-        {/* Meta Pixel Code */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `!function(f,b,e,v,n,t,s)
-{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-n.queue=[];t=b.createElement(e);t.async=!0;
-t.src=v;s=b.getElementsByTagName(e)[0];
-s.parentNode.insertBefore(t,s)}(window, document,'script',
-'https://connect.facebook.net/en_US/fbevents.js');
-fbq('init', '886844317516110');
-fbq('track', 'PageView');`,
-          }}
-        />
+        {/* Meta Pixel noscript fallback */}
         <noscript
           dangerouslySetInnerHTML={{
-            __html: `<img height="1" width="1" style="display:none"
-src="https://www.facebook.com/tr?id=886844317516110&ev=PageView&noscript=1"
-/>`,
+            __html: meta.noscriptMarkup(),
           }}
         />
-        {/* End Meta Pixel Code */}
       </head>
       <body>
         {children}
@@ -154,6 +138,11 @@ src="https://www.facebook.com/tr?id=886844317516110&ev=PageView&noscript=1"
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  useEffect(() => {
+    meta.init();
+    meta.pageView();
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

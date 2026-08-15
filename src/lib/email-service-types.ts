@@ -11,6 +11,7 @@ export type OrderData = {
   deliveryPrice: number;
   total: number;
   orderDateTime: string;
+  orderRef?: string;
 };
 
 export type EmailResult = { success: boolean; message: string };

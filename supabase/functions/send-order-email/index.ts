@@ -19,6 +19,7 @@ interface OrderPayload {
   deliveryPrice?: number;
   total?: number;
   orderDateTime?: string;
+  orderRef?: string;
   subject?: string;
   body?: string;
 }
@@ -62,7 +63,9 @@ Deno.serve(async (req: Request) => {
       `Unit price: ${body.unitPrice ?? 0} DA`,
       `Delivery: ${body.deliveryPrice === 0 ? "Free" : `${body.deliveryPrice ?? 0} DA`}`,
       `Total: ${body.total ?? 0} DA`,
+      `Order Ref: ${body.orderRef ?? "N/A"}`,
       `Date: ${body.orderDateTime ? new Date(body.orderDateTime).toLocaleString() : new Date().toLocaleString()}`,
+      `Order Ref: ${body.orderRef ?? "N/A"}`,
       ``,
       `---`,
       `This order was submitted from the RAHIQ Parfums website.`,

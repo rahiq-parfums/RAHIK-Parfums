@@ -109,6 +109,18 @@ const translations: Record<Language, Dict> = {
 
     "footer.rights": "جميع الحقوق محفوظة",
 
+    "orderSuccess.title": "تم تأكيد طلبك",
+    "orderSuccess.message": "شكرًا لك. تم إرسال طلبك بنجاح وسنتواصل معك قريبًا لتأكيد التوصيل.",
+    "orderSuccess.reference": "رقم الطلب",
+    "orderSuccess.offer": "العرض",
+    "orderSuccess.quantity": "الكمية",
+    "orderSuccess.unitPrice": "سعر الوحدة",
+    "orderSuccess.delivery": "التوصيل",
+    "orderSuccess.total": "المجموع",
+    "orderSuccess.backHome": "العودة إلى الرئيسية",
+    "orderSuccess.backOffers": "تصفّح العروض الأخرى",
+    "orderSuccess.noOrder": "لا يوجد طلب لعرضه. ربما انتهت الجلسة أو تم الوصول لهذه الصفحة مباشرة.",
+
     "order.title": "نموذج الطلب",
     "order.fullName": "الاسم الكامل",
     "order.fullNamePlaceholder": "أدخل اسمك الكامل",
@@ -320,6 +332,18 @@ const translations: Record<Language, Dict> = {
     "contact.email": "Email",
 
     "footer.rights": "All Rights Reserved",
+
+    "orderSuccess.title": "Order Confirmed",
+    "orderSuccess.message": "Thank you. Your order has been submitted successfully and we will contact you shortly to confirm delivery.",
+    "orderSuccess.reference": "Order Reference",
+    "orderSuccess.offer": "Offer",
+    "orderSuccess.quantity": "Quantity",
+    "orderSuccess.unitPrice": "Unit Price",
+    "orderSuccess.delivery": "Delivery",
+    "orderSuccess.total": "Total",
+    "orderSuccess.backHome": "Back to Home",
+    "orderSuccess.backOffers": "Browse other offers",
+    "orderSuccess.noOrder": "No order to display. The session may have expired or this page was accessed directly.",
 
     "order.title": "Order Form",
     "order.fullName": "Full Name",

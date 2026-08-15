@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Link, createFileRoute, notFound } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/SiteLayout";
 import { ImageGallery } from "@/components/ImageGallery";
@@ -5,6 +6,7 @@ import { PriceTag } from "@/components/PriceTag";
 import { OrderForm } from "@/components/OrderForm";
 import { useLocalized } from "@/lib/use-localized";
 import { useI18n } from "@/lib/i18n";
+import { meta } from "@/lib/meta";
 import { useOffers } from "@/lib/data";
 
 export const Route = createFileRoute("/offers/$offerId")({
@@ -60,7 +62,27 @@ function OfferDetailsPage() {
 
   const name = localize(offer.name);
   const description = localize(offer.description);
+  useEffect(() => {
+    if (offer) {
+      meta.viewContent({
+        contentIds: [offer.id],
+        contentName: name,
+        value: price,
+      });
+    }
+  }, [offer?.id]);
+
   const longDesc = offer.longDescription ? localize(offer.longDescription) : "";
+
+  useEffect(() => {
+    if (offer) {
+      meta.viewContent({
+        contentIds: [offer.id],
+        contentName: localize(offer.name),
+        value: price,
+      });
+    }
+  }, [offer?.id]);
 
   return (
     <SiteLayout>

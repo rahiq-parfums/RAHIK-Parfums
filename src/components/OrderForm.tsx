@@ -1,9 +1,15 @@
 import { useMemo, useRef, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { useI18n } from "@/lib/i18n";
 import { useDeliveryPrices } from "@/lib/data";
 import { WILAYAS } from "@/lib/algeria";
 import { formatPrice } from "@/lib/currency";
 import { sendOrderEmail } from "@/lib/email-service";
+import { meta } from "@/lib/meta";
+import {
+  generateOrderRef,
+  setOrderSuccessState,
+} from "@/lib/order-success";
 import { cn } from "@/lib/utils";
 
 type OfferProp = {
@@ -24,8 +30,10 @@ function getEffectivePrice(offer: OfferProp) {
 
 export function OrderForm({ offer }: { offer: OfferProp }) {
   const { t, lang } = useI18n();
+  const navigate = useNavigate();
   const { data: deliveryPricing = {} } = useDeliveryPrices();
   const wilayas = WILAYAS;
+  const checkoutStarted = useRef(false);
 
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
@@ -61,12 +69,24 @@ export function OrderForm({ offer }: { offer: OfferProp }) {
     const effectiveCommune = useManualCommune ? manualCommune.trim() : commune;
     if (!fullName || !phone || !wilayaCode || !effectiveCommune) return;
 
+    if (!checkoutStarted.current) {
+      checkoutStarted.current = true;
+      meta.initiateCheckout({
+        contentIds: [offer.id],
+        contentName: lang === "ar" ? offer.name.ar : offer.name.en,
+        quantity,
+        value: total,
+      });
+    }
+
     setSubmitting(true);
     const wilayaLabel = selectedWilaya
       ? lang === "ar"
         ? selectedWilaya.nameAr
         : selectedWilaya.nameEn
       : wilayaCode;
+
+    const orderRef = generateOrderRef();
 
     const order = {
       offerId: offer.id,
@@ -81,17 +101,35 @@ export function OrderForm({ offer }: { offer: OfferProp }) {
       deliveryPrice: deliveryPrice ?? 0,
       total,
       orderDateTime: new Date().toISOString(),
+      orderRef,
     };
 
     const res = await sendOrderEmail(order);
     setSubmitting(false);
-    setResult({ ok: res.success, msg: res.success ? t("order.success") : res.message });
+
     if (res.success) {
-      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }), 100);
-      setFullName("");
-      setPhone("");
-      setManualCommune("");
-      setUseManualCommune(false);
+      meta.purchase(
+        {
+          contentIds: [offer.id],
+          contentName: order.offerName,
+          numItems: quantity,
+          value: total,
+        },
+        orderRef,
+      );
+
+      setOrderSuccessState({
+        orderRef,
+        offerName: order.offerName,
+        quantity,
+        unitPrice,
+        deliveryPrice: deliveryPrice ?? 0,
+        total,
+      });
+
+      navigate({ to: "/order-success" });
+    } else {
+      setResult({ ok: false, msg: res.message });
     }
   }
 

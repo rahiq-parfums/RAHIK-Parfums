@@ -25,6 +25,7 @@ export async function sendOrderEmail(order: OrderData): Promise<EmailResult> {
     deliveryPrice: order.deliveryPrice,
     total: order.total,
     orderDateTime: order.orderDateTime,
+    orderRef: order.orderRef,
   };
 
   try {
