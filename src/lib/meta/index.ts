@@ -13,7 +13,7 @@
  *   meta.purchase({ ... }, orderRef);
  */
 
-import { initPixel, trackEvent, pixelNoscriptMarkup } from "./pixel";
+import { initPixel, trackEvent, pixelNoscriptMarkup } from "./pixel.ts";
 import {
   trackPageView,
   trackViewContent,

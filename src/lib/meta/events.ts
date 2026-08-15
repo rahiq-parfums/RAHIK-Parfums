@@ -6,7 +6,7 @@
  */
 
 import { META_CURRENCY } from "./config";
-import { trackEvent } from "./pixel";
+import { trackEvent } from "./pixel.ts";
 
 export interface ViewContentParams {
   contentIds: string[];
