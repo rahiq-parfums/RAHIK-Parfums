@@ -8,8 +8,14 @@ import { useLocalized } from "@/lib/use-localized";
 import { useI18n } from "@/lib/i18n";
 import { meta } from "@/lib/meta";
 import { useOffers, findOfferByParam, type CatalogOffer } from "@/lib/data";
+import { CAMPUS_PARAM_VALUE, isCampusContext } from "@/lib/campus";
 
 export const Route = createFileRoute("/offers/$offerId")({
+  validateSearch: (search: Record<string, unknown>): { campus?: string } => {
+    // The Campus context is carried in the URL so it survives Home → catalogue
+    // → order navigation without any global state.
+    return isCampusContext(search.campus) ? { campus: CAMPUS_PARAM_VALUE } : {};
+  },
   head: () => ({
     meta: [
       { title: "Offer Details — RAHIQ Parfums | رحيق" },
@@ -49,10 +55,12 @@ function OfferLoading() {
  */
 function OfferDetailsPage() {
   const { offerId } = Route.useParams();
+  const { campus } = Route.useSearch();
   const { data: offers = [], isPending, isError, refetch, isFetching } = useOffers(false);
   const { t } = useI18n();
 
   const offer = findOfferByParam(offers, offerId);
+  const isCampus = isCampusContext(campus);
 
   if (isError) {
     return (
@@ -78,10 +86,10 @@ function OfferDetailsPage() {
   if (isPending && !offer) return <OfferLoading />;
   if (!offer) throw notFound();
 
-  return <OfferDetailsView key={offer.id} offer={offer} />;
+  return <OfferDetailsView key={offer.id} offer={offer} isCampus={isCampus} />;
 }
 
-function OfferDetailsView({ offer }: { offer: CatalogOffer }) {
+function OfferDetailsView({ offer, isCampus }: { offer: CatalogOffer; isCampus: boolean }) {
   const localize = useLocalized();
   const { t } = useI18n();
   const tracked = useRef<string | null>(null);
@@ -210,7 +218,7 @@ function OfferDetailsView({ offer }: { offer: CatalogOffer }) {
         <h2 className="mb-8 text-center text-base font-bold tracking-[0.14em] text-muted-foreground">
           {t("offerDetails.orderForm")}
         </h2>
-        <OrderForm offer={offer} />
+        <OrderForm offer={offer} initialDeliveryMode={isCampus ? "campus" : "normal"} />
       </section>
 
       <button

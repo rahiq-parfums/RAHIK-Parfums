@@ -3,6 +3,7 @@ import { useLocalized } from "@/lib/use-localized";
 import { useI18n } from "@/lib/i18n";
 import { formatPrice } from "@/lib/currency";
 import { PerfumeStats } from "@/components/PerfumeStats";
+import { campusSearch } from "@/lib/campus";
 import { cn } from "@/lib/utils";
 import type { Perfume } from "@/lib/catalog";
 
@@ -15,21 +16,27 @@ type PerfumeCardPrice = {
 /**
  * A compact, mobile-first perfume card.
  *
- * Hierarchy: image → name → compact community metadata → price → action.
+ * Hierarchy: image → name → compact community metadata → price → order action.
  * The image stays the dominant element; everything below it is compressed into
  * micro-typography and hairline meters so roughly two cards fit in one phone
  * viewport.
  *
- * `price` is optional and only supplied when the Dashboard links this perfume
- * to an offer that carries a real price.
+ * `price` is the real Dashboard price, taken from the offer this perfume
+ * belongs to. The card never invents a price: a perfume that is not part of any
+ * offer has no purchasable unit, so it is rendered as catalogue-only.
+ *
+ * `campus` carries the RAHIQ Campus context into the order page so a customer
+ * who entered through Campus does not have to select Campus a second time.
  */
 export function PerfumeCard({
   perfume,
   price,
+  campus = false,
   className,
 }: {
   perfume: Perfume;
   price?: PerfumeCardPrice;
+  campus?: boolean;
   className?: string;
 }) {
   const localize = useLocalized();
@@ -43,6 +50,7 @@ export function PerfumeCard({
     <article
       className={cn(
         "group flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-colors hover:border-primary/45",
+        campus && "border-primary/50",
         className,
       )}
     >
@@ -106,17 +114,15 @@ export function PerfumeCard({
             <Link
               to="/offers/$offerId"
               params={{ offerId: price.offerId }}
+              search={campusSearch(campus)}
               className="shrink-0 rounded-full bg-primary px-2.5 py-1 text-[0.6rem] font-bold tracking-[0.04em] text-primary-foreground transition-opacity hover:opacity-90"
             >
-              {t("offers.cta")}
+              {t("perfumes.orderNow")}
             </Link>
           ) : (
-            <Link
-              to="/perfumes"
-              className="shrink-0 rounded-full border border-primary/45 px-2.5 py-1 text-[0.6rem] font-bold tracking-[0.04em] text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
-            >
-              {t("home.card.action")}
-            </Link>
+            <span className="shrink-0 rounded-full border border-border px-2.5 py-1 text-[0.6rem] font-bold tracking-[0.04em] text-muted-foreground">
+              {t("perfumes.inStock")}
+            </span>
           )}
         </div>
       </div>

@@ -20,7 +20,7 @@ type OfferProp = {
   discount?: { enabled: boolean; newPrice: number };
 };
 
-type DeliveryMode = "standard" | "campus";
+import type { DeliveryMode } from "@/lib/email-service-types";
 
 function getEffectivePrice(offer: OfferProp) {
   if (offer.discount?.enabled && offer.discount.newPrice > 0) {
@@ -29,7 +29,13 @@ function getEffectivePrice(offer: OfferProp) {
   return offer.price;
 }
 
-export function OrderForm({ offer }: { offer: OfferProp }) {
+export function OrderForm({
+  offer,
+  initialDeliveryMode = "normal",
+}: {
+  offer: OfferProp;
+  initialDeliveryMode?: DeliveryMode;
+}) {
   const { t, lang } = useI18n();
   const localize = useLocalized();
   const navigate = useNavigate();
@@ -37,9 +43,14 @@ export function OrderForm({ offer }: { offer: OfferProp }) {
   const wilayas = WILAYAS;
   const checkoutStarted = useRef(false);
 
+  // When the customer arrived through RAHIQ Campus, Campus is already the
+  // active delivery mode: the toggle is hidden and the mode is locked, so the
+  // customer is never asked to select Campus a second time.
+  const campusLocked = initialDeliveryMode === "campus";
+
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
-  const [deliveryMode, setDeliveryMode] = useState<DeliveryMode>("standard");
+  const [deliveryMode, setDeliveryMode] = useState<DeliveryMode>(initialDeliveryMode);
   const [residence, setResidence] = useState("");
   const [wilayaCode, setWilayaCode] = useState("");
   const [commune, setCommune] = useState("");
@@ -212,26 +223,41 @@ export function OrderForm({ offer }: { offer: OfferProp }) {
           <span className={labelClass} id="delivery-mode-label">
             {t("order.deliveryMode")}
           </span>
-          <div role="radiogroup" aria-labelledby="delivery-mode-label" className="flex gap-2">
-            <button
-              type="button"
-              role="radio"
-              aria-checked={!isCampus}
-              onClick={() => setDeliveryMode("standard")}
-              className={modeButtonClass(!isCampus)}
+          {campusLocked ? (
+            <div
+              role="status"
+              className="flex items-center justify-between gap-3 rounded-lg border border-primary/50 bg-primary/10 px-4 py-3.5"
             >
-              {t("order.deliveryStandard")}
-            </button>
-            <button
-              type="button"
-              role="radio"
-              aria-checked={isCampus}
-              onClick={() => setDeliveryMode("campus")}
-              className={modeButtonClass(isCampus)}
-            >
-              {t("order.deliveryCampus")}
-            </button>
-          </div>
+              <span className="flex items-center gap-2 text-base font-semibold text-foreground">
+                <span className="h-2 w-2 shrink-0 rounded-full bg-primary" aria-hidden="true" />
+                {t("order.deliveryCampus")}
+              </span>
+              <span className="shrink-0 rounded-full bg-primary px-2.5 py-1 text-[0.6rem] font-bold tracking-[0.1em] text-primary-foreground">
+                {t("campus.active")}
+              </span>
+            </div>
+          ) : (
+            <div role="radiogroup" aria-labelledby="delivery-mode-label" className="flex gap-2">
+              <button
+                type="button"
+                role="radio"
+                aria-checked={!isCampus}
+                onClick={() => setDeliveryMode("normal")}
+                className={modeButtonClass(!isCampus)}
+              >
+                {t("order.deliveryStandard")}
+              </button>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={isCampus}
+                onClick={() => setDeliveryMode("campus")}
+                className={modeButtonClass(isCampus)}
+              >
+                {t("order.deliveryCampus")}
+              </button>
+            </div>
+          )}
         </div>
 
         {isCampus ? (

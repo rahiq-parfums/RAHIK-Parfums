@@ -2,9 +2,15 @@ import { createFileRoute } from "@tanstack/react-router";
 import { SiteLayout, PageIntro } from "@/components/SiteLayout";
 import { PerfumeCard } from "@/components/PerfumeCard";
 import { useI18n } from "@/lib/i18n";
-import { usePerfumes } from "@/lib/data";
+import { useCatalogue } from "@/lib/data";
+import { CAMPUS_PARAM_VALUE, isCampusContext } from "@/lib/campus";
 
 export const Route = createFileRoute("/perfumes")({
+  validateSearch: (search: Record<string, unknown>): { campus?: string } => {
+    // RAHIQ Campus hands its context to the catalogue, which passes it on to
+    // the order page through the same param.
+    return isCampusContext(search.campus) ? { campus: CAMPUS_PARAM_VALUE } : {};
+  },
   head: () => ({
     meta: [
       { title: "Perfumes — RAHIQ Parfums | رحيق" },
@@ -26,17 +32,51 @@ export const Route = createFileRoute("/perfumes")({
 
 function PerfumesPage() {
   const { t } = useI18n();
-  const { data: perfumes = [] } = usePerfumes(true);
+  const { campus } = Route.useSearch();
+
+  // Same hook as Home: one product source, one price source, one card.
+  const { items, isPending } = useCatalogue(true);
+  const isCampus = isCampusContext(campus);
 
   return (
     <SiteLayout>
-      <PageIntro title={t("perfumes.title")} text={t("perfumes.intro")} />
+      <PageIntro
+        title={isCampus ? t("campus.ordersTitle") : t("perfumes.title")}
+        text={isCampus ? t("campus.ordersText") : t("perfumes.intro")}
+      />
+
+      {isCampus && (
+        <p className="mx-auto mb-6 flex max-w-md items-center justify-center gap-2 rounded-full border border-primary/50 bg-primary/10 px-4 py-2 text-center text-xs font-semibold text-primary">
+          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" />
+          {t("campus.active")}
+        </p>
+      )}
+
       <section className="mx-auto max-w-5xl px-4 pb-20 sm:px-6 sm:pb-24">
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
-          {perfumes.map((perfume) => (
-            <PerfumeCard key={perfume.id} perfume={perfume} />
-          ))}
-        </div>
+        {isPending ? (
+          <div className="flex justify-center py-16">
+            <div className="h-7 w-7 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
+          </div>
+        ) : items.length > 0 ? (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
+            {items.map((item) => (
+              <PerfumeCard
+                key={item.perfume.id}
+                perfume={item.perfume}
+                campus={isCampus}
+                price={
+                  item.offer && item.price != null
+                    ? { price: item.price, oldPrice: item.oldPrice, offerId: item.offer.id }
+                    : undefined
+                }
+              />
+            ))}
+          </div>
+        ) : (
+          <p className="rounded-xl border border-dashed border-border px-5 py-10 text-center text-sm text-muted-foreground">
+            {t("home.empty")}
+          </p>
+        )}
       </section>
     </SiteLayout>
   );

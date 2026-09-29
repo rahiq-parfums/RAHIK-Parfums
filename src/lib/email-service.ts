@@ -20,7 +20,7 @@ export async function sendOrderEmail(order: OrderData): Promise<EmailResult> {
     wilaya: order.wilaya,
     commune: order.commune,
     deliveryType: order.deliveryType,
-    deliveryMode: order.deliveryMode ?? "standard",
+    deliveryMode: order.deliveryMode ?? "normal",
     residence: order.residence,
     quantity: order.quantity,
     unitPrice: order.unitPrice,

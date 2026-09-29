@@ -14,7 +14,7 @@ interface OrderPayload {
   wilaya?: string;
   commune?: string;
   deliveryType?: string;
-  deliveryMode?: "standard" | "campus";
+  deliveryMode?: "normal" | "campus";
   residence?: string;
   quantity?: number;
   unitPrice?: number;

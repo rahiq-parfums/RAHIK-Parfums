@@ -1,4 +1,4 @@
-export type DeliveryMode = "standard" | "campus";
+export type DeliveryMode = "normal" | "campus";
 
 export type OrderData = {
   offerId: string;

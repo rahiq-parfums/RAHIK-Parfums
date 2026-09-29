@@ -19,5 +19,33 @@ export const CAMPUS_RESIDENCES: Bilingual[] = [
   { ar: "الإقامة الجامعية 6", en: "University Residence 6" },
 ];
 
-/** Campus delivery lands inside the residence itself, so it carries no fare. */
-export const CAMPUS_DELIVERY_PRICE = 0;
+/**
+ * Flat delivery fee for RAHIQ Campus, in DZD.
+ *
+ * This is a fixed commercial price for delivering inside the university
+ * residence. It is intentionally a constant rather than a Dashboard row: the
+ * existing Dashboard drives *wilaya* delivery prices only, and Campus is not a
+ * wilaya. It is applied on top of the order subtotal, exactly like a normal
+ * delivery fee, and never replaces the normal wilaya pricing.
+ */
+export const CAMPUS_DELIVERY_PRICE = 50;
+
+/** Search-param key used to carry Campus context across navigation. */
+export const CAMPUS_PARAM = "campus";
+
+/** Value of {@link CAMPUS_PARAM} that activates the Campus context. */
+export const CAMPUS_PARAM_VALUE = "1";
+
+/**
+ * Campus context is carried in the URL so it survives Home → catalogue →
+ * checkout navigation without any global state. A missing or falsy value means
+ * a normal order.
+ */
+export function isCampusContext(value: unknown): boolean {
+  return value === CAMPUS_PARAM_VALUE || value === true;
+}
+
+/** Builds the `search` object needed to keep the Campus context alive. */
+export function campusSearch(campus: boolean): { campus?: string } {
+  return campus ? { [CAMPUS_PARAM]: CAMPUS_PARAM_VALUE } : {};
+}

@@ -3,6 +3,7 @@
  * Replaces the localStorage admin-store for all data reads.
  */
 
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import type { BadgeKey, Perfume, PerfumeGender, Offer } from "@/lib/catalog";
@@ -258,6 +259,63 @@ export function findOfferForPerfume(
   perfume: Perfume,
 ): CatalogOffer | undefined {
   return (perfume.dbId && index.get(perfume.dbId)) || index.get(perfume.id);
+}
+
+// ─── Shared catalogue ─────────────────────────────────────────────────────────
+
+export type CataloguePerfume = {
+  perfume: Perfume;
+  /** The real offer that gives this perfume a price and an orderable unit. */
+  offer?: CatalogOffer;
+  price?: number;
+  oldPrice?: number;
+  isDiscounted: boolean;
+};
+
+/**
+ * The single catalogue source shared by Home and /perfumes.
+ *
+ * Both pages call this hook, so they resolve the same React Query keys
+ * (`["perfumes", true]` and `["offers", true]`), share one network result and
+ * can never drift apart. A product added or edited in the Dashboard appears on
+ * both pages automatically.
+ *
+ * Prices are never fabricated: a perfume only gets a price when the Dashboard
+ * links it to an offer, because offers are the only orderable, priced entity in
+ * the existing data model.
+ */
+const EMPTY_PERFUMES: Perfume[] = [];
+const EMPTY_OFFERS: CatalogOffer[] = [];
+
+export function useCatalogue(visibleOnly = true) {
+  const perfumesQuery = usePerfumes(visibleOnly);
+  const offersQuery = useOffers(visibleOnly);
+
+  const perfumes = perfumesQuery.data ?? EMPTY_PERFUMES;
+  const offers = offersQuery.data ?? EMPTY_OFFERS;
+  const offerIndex = useMemo(() => indexOffersByPerfume(offers), [offers]);
+
+  const items = useMemo<CataloguePerfume[]>(
+    () =>
+      perfumes.map((perfume) => {
+        const offer = findOfferForPerfume(offerIndex, perfume);
+        return {
+          perfume,
+          offer,
+          price: offer ? effectiveOfferPrice(offer) : undefined,
+          oldPrice: offer ? referenceOfferPrice(offer) : undefined,
+          isDiscounted: Boolean(offer?.discount?.enabled),
+        };
+      }),
+    [perfumes, offerIndex],
+  );
+
+  return {
+    items,
+    perfumes,
+    offers,
+    isPending: perfumesQuery.isPending || offersQuery.isPending,
+  };
 }
 
 /** Normalises a slug or a URL segment so "Men Collection" and "men-collection" match. */

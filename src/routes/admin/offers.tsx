@@ -116,16 +116,34 @@ function AdminOffersPage() {
 
       await supabase.from("offer_perfumes").delete().eq("offer_id", offerId!);
       if (offerPerfumes.length > 0) {
+        // `offer_perfumes.perfume_id` is what links a set row to a real
+        // catalogue perfume, and it is what lets a perfume card show a price and
+        // an order button. The editor only collects names, so the id is resolved
+        // here from the `perfumes` table. Previously it was never sent, which
+        // wiped the link every time an offer was saved.
+        const { data: allPerfumes, error: perfumesError } = await supabase
+          .from("perfumes")
+          .select("id, name_ar, name_en");
+        if (perfumesError) throw perfumesError;
+
+        const key = (value: string) => value.trim().toLowerCase().replace(/\s+/g, " ");
+        const idByName = new Map<string, string>();
+        for (const p of allPerfumes ?? []) {
+          if (p.name_ar) idByName.set(key(p.name_ar), p.id);
+          if (p.name_en) idByName.set(key(p.name_en), p.id);
+        }
+
         await supabase.from("offer_perfumes").insert(
           offerPerfumes.map((op, i) => ({
             offer_id: offerId,
+            perfume_id: idByName.get(key(op.name_ar)) ?? idByName.get(key(op.name_en)) ?? null,
             name_ar: op.name_ar,
             name_en: op.name_en,
             image_url: op.image_url,
             desc_ar: op.desc_ar,
             desc_en: op.desc_en,
             display_order: i,
-          }))
+          })),
         );
       }
     },
