@@ -69,8 +69,6 @@ function NavLink({
   );
 }
 
-
-
 export function AdminLayout({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   async function handleLogout() {
@@ -79,85 +77,79 @@ export function AdminLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-  <AdminAuth>
-    <div className="min-h-screen bg-muted/30">
-      {/* Mobile overlay */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
-      <aside
-        className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-background border-r border-border transition-transform duration-200 lg:translate-x-0",
-          sidebarOpen ? "translate-x-0" : "-translate-x-full",
-        )}
-      >
-        {/* Sidebar header */}
-        <div className="flex h-16 items-center justify-between border-b border-border px-5">
-          <span className="text-sm font-semibold tracking-[0.16em] text-foreground uppercase">
-            RAHIQ Admin
-          </span>
-          <button
-            className="lg:hidden text-muted-foreground hover:text-foreground"
+    <AdminAuth>
+      <div className="min-h-screen bg-muted/30">
+        {/* Mobile overlay */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 z-40 bg-black/40 lg:hidden"
             onClick={() => setSidebarOpen(false)}
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+          />
+        )}
 
-        {/* Nav */}
-        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
-          {NAV_ITEMS.map((item) => (
-            <NavLink
-              key={item.to}
-              {...item}
+        {/* Sidebar */}
+        <aside
+          className={cn(
+            "fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-background border-r border-border transition-transform duration-200 lg:translate-x-0",
+            sidebarOpen ? "translate-x-0" : "-translate-x-full",
+          )}
+        >
+          {/* Sidebar header */}
+          <div className="flex h-16 items-center justify-between border-b border-border px-5">
+            <span className="text-sm font-semibold tracking-[0.16em] text-foreground uppercase">
+              RAHIQ Admin
+            </span>
+            <button
+              className="lg:hidden text-muted-foreground hover:text-foreground"
               onClick={() => setSidebarOpen(false)}
-            />
-          ))}
-        </nav>
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
 
-        {/* Sidebar footer */}
-        <div className="border-t border-border p-3">
-          <Link
-            to="/"
-            className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-          >
-            <ExternalLink className="h-4 w-4" />
-            <span>View Website</span>
-          </Link>
-          <button
-            onClick={handleLogout}
-            className="mt-2 flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-          >
-            <span>Logout</span> 
-          </button>
+          {/* Nav */}
+          <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
+            {NAV_ITEMS.map((item) => (
+              <NavLink key={item.to} {...item} onClick={() => setSidebarOpen(false)} />
+            ))}
+          </nav>
+
+          {/* Sidebar footer */}
+          <div className="border-t border-border p-3">
+            <Link
+              to="/"
+              className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            >
+              <ExternalLink className="h-4 w-4" />
+              <span>View Website</span>
+            </Link>
+            <button
+              onClick={handleLogout}
+              className="mt-2 flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            >
+              <span>Logout</span>
+            </button>
+          </div>
+        </aside>
+
+        {/* Main area */}
+        <div className="lg:pl-64 flex flex-col min-h-screen">
+          {/* Mobile top bar */}
+          <header className="sticky top-0 z-30 flex h-14 items-center border-b border-border bg-background px-4 lg:hidden">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            <span className="ml-3 text-sm font-semibold tracking-[0.14em] uppercase text-foreground">
+              RAHIQ Admin
+            </span>
+          </header>
+
+          <main className="flex-1 px-5 py-8 sm:px-8 sm:py-10 max-w-5xl w-full">{children}</main>
         </div>
-      </aside>
-
-      {/* Main area */}
-      <div className="lg:pl-64 flex flex-col min-h-screen">
-        {/* Mobile top bar */}
-        <header className="sticky top-0 z-30 flex h-14 items-center border-b border-border bg-background px-4 lg:hidden">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="text-muted-foreground hover:text-foreground"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
-          <span className="ml-3 text-sm font-semibold tracking-[0.14em] uppercase text-foreground">
-            RAHIQ Admin
-          </span>
-        </header>
-
-        <main className="flex-1 px-5 py-8 sm:px-8 sm:py-10 max-w-5xl w-full">
-          {children}
-        </main>
       </div>
-    </div>
     </AdminAuth>
   );
 }
@@ -167,7 +159,8 @@ export function AdminLayout({ children }: { children: ReactNode }) {
 const inputClass =
   "w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-normal text-foreground transition-colors focus:border-primary focus:outline-none placeholder:text-muted-foreground/60";
 
-const labelClass = "mb-1.5 block text-xs font-medium tracking-[0.06em] text-muted-foreground uppercase";
+const labelClass =
+  "mb-1.5 block text-xs font-medium tracking-[0.06em] text-muted-foreground uppercase";
 
 export function AdminCard({ children, className }: { children: ReactNode; className?: string }) {
   return (
@@ -190,9 +183,7 @@ export function AdminPageHeader({
     <div className="mb-8 flex items-start justify-between gap-4">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">{title}</h1>
-        {description && (
-          <p className="mt-1 text-sm text-muted-foreground">{description}</p>
-        )}
+        {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
       </div>
       {action && <div className="shrink-0">{action}</div>}
     </div>
@@ -203,10 +194,12 @@ export function AdminField({
   label,
   children,
   required,
+  hint,
 }: {
   label: string;
   children: ReactNode;
   required?: boolean;
+  hint?: string;
 }) {
   return (
     <div>
@@ -215,6 +208,7 @@ export function AdminField({
         {required && <span className="ml-0.5 text-red-500">*</span>}
       </label>
       {children}
+      {hint && <p className="mt-1.5 text-xs text-muted-foreground">{hint}</p>}
     </div>
   );
 }
@@ -255,8 +249,10 @@ export function AdminButton({
         "inline-flex items-center gap-2 rounded-lg font-normal transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed",
         size === "sm" ? "px-3 py-1.5 text-xs" : "px-4 py-2.5 text-sm",
         variant === "primary" && "bg-primary text-primary-foreground hover:opacity-90",
-        variant === "ghost" && "border border-border text-muted-foreground hover:text-foreground hover:bg-muted",
-        variant === "danger" && "border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300",
+        variant === "ghost" &&
+          "border border-border text-muted-foreground hover:text-foreground hover:bg-muted",
+        variant === "danger" &&
+          "border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300",
         props.className,
       )}
     >
@@ -288,9 +284,7 @@ export function AdminBadge({
 }
 
 export function AdminSectionTitle({ children }: { children: ReactNode }) {
-  return (
-    <h2 className="text-lg font-semibold text-foreground mb-4">{children}</h2>
-  );
+  return <h2 className="text-lg font-semibold text-foreground mb-4">{children}</h2>;
 }
 
 export function ConfirmDialog({
@@ -318,10 +312,7 @@ export function ConfirmDialog({
           <AdminButton variant="ghost" onClick={onCancel}>
             Cancel
           </AdminButton>
-          <AdminButton
-            variant={variant === "danger" ? "danger" : "primary"}
-            onClick={onConfirm}
-          >
+          <AdminButton variant={variant === "danger" ? "danger" : "primary"} onClick={onConfirm}>
             {confirmLabel}
           </AdminButton>
         </div>
@@ -346,9 +337,7 @@ export function SaveBar({
       <AdminButton onClick={onSave} disabled={saving || !dirty}>
         {saving ? "Saving..." : "Save Changes"}
       </AdminButton>
-      {saved && (
-        <span className="text-xs text-green-600 font-medium">Saved successfully</span>
-      )}
+      {saved && <span className="text-xs text-green-600 font-medium">Saved successfully</span>}
     </div>
   );
 }

@@ -4,12 +4,7 @@ import { useLocalized } from "@/lib/use-localized";
 import { useI18n } from "@/lib/i18n";
 import { PriceTag } from "@/components/PriceTag";
 import { cn } from "@/lib/utils";
-import type { Offer } from "@/lib/catalog";
-
-type OfferWithDiscount = Offer & {
-  freeDelivery?: boolean;
-  discount?: { enabled: boolean; newPrice: number; oldPrice: number; showCountdown?: boolean; endDate?: string | null };
-};
+import type { CatalogOffer } from "@/lib/data";
 
 type TimeLeft = { days: number; hours: number; minutes: number; seconds: number } | null;
 
@@ -35,12 +30,12 @@ function useCountdown(endDate: string | null | undefined): TimeLeft {
   return left;
 }
 
-function effectivePrice(offer: OfferWithDiscount) {
+function effectivePrice(offer: CatalogOffer) {
   if (offer.discount?.enabled && offer.discount.newPrice > 0) return offer.discount.newPrice;
   return offer.price;
 }
 
-function getOldPrice(offer: OfferWithDiscount) {
+function getOldPrice(offer: CatalogOffer) {
   if (offer.discount?.enabled) return offer.discount.oldPrice;
   return offer.oldPrice;
 }
@@ -54,7 +49,7 @@ export function OfferCard({
   offer,
   withCountdown = false,
 }: {
-  offer: OfferWithDiscount;
+  offer: CatalogOffer;
   withCountdown?: boolean;
 }) {
   const localize = useLocalized();
@@ -64,8 +59,7 @@ export function OfferCard({
   const price = effectivePrice(offer);
   const oldP = getOldPrice(offer);
 
-  const discountPct =
-    oldP != null && oldP > price ? Math.round(((oldP - price) / oldP) * 100) : 0;
+  const discountPct = oldP != null && oldP > price ? Math.round(((oldP - price) / oldP) * 100) : 0;
 
   const showTimer = withCountdown && offer.discount?.showCountdown && offer.discount?.enabled;
   const timeLeft = useCountdown(showTimer ? offer.discount?.endDate : null);
@@ -92,9 +86,7 @@ export function OfferCard({
       </div>
 
       <div className="flex flex-1 flex-col px-5 pb-6 pt-5 text-center">
-        <h2 className="text-lg font-bold tracking-[0.08em] text-card-foreground">
-          {name}
-        </h2>
+        <h2 className="text-lg font-bold tracking-[0.08em] text-card-foreground">{name}</h2>
 
         <span
           className={cn(
@@ -108,11 +100,7 @@ export function OfferCard({
         </p>
 
         <div className="mt-4">
-          <PriceTag
-            price={price}
-            oldPrice={oldP}
-            className="justify-center"
-          />
+          <PriceTag price={price} oldPrice={oldP} className="justify-center" />
         </div>
 
         {showTimer && timeLeft && (

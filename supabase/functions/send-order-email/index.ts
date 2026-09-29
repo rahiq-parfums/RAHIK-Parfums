@@ -14,6 +14,8 @@ interface OrderPayload {
   wilaya?: string;
   commune?: string;
   deliveryType?: string;
+  deliveryMode?: "standard" | "campus";
+  residence?: string;
   quantity?: number;
   unitPrice?: number;
   deliveryPrice?: number;
@@ -22,6 +24,36 @@ interface OrderPayload {
   orderRef?: string;
   subject?: string;
   body?: string;
+}
+
+function buildOrderBody(body: OrderPayload): string {
+  const isCampus = body.deliveryMode === "campus";
+
+  const locationLines = isCampus
+    ? [`Delivery type: Campus — University Residence`, `Residence: ${body.residence ?? "N/A"}`]
+    : [
+        `Wilaya: ${body.wilaya || "N/A"}`,
+        `Commune: ${body.commune || "N/A"}`,
+        `Delivery type: ${body.deliveryType ?? "N/A"}`,
+      ];
+
+  return [
+    `New Order — RAHIQ Parfums`,
+    ``,
+    `Offer: ${body.offerName ?? "N/A"}`,
+    `Name: ${body.fullName ?? "N/A"}`,
+    `Phone: ${body.phone ?? "N/A"}`,
+    ...locationLines,
+    `Quantity: ${body.quantity ?? 1}`,
+    `Unit price: ${body.unitPrice ?? 0} DA`,
+    `Delivery price: ${body.deliveryPrice === 0 ? "Free" : `${body.deliveryPrice ?? 0} DA`}`,
+    `Total: ${body.total ?? 0} DA`,
+    `Order Ref: ${body.orderRef ?? "N/A"}`,
+    `Date: ${body.orderDateTime ? new Date(body.orderDateTime).toLocaleString() : new Date().toLocaleString()}`,
+    ``,
+    `---`,
+    `This order was submitted from the RAHIQ Parfums website.`,
+  ].join("\n");
 }
 
 Deno.serve(async (req: Request) => {
@@ -39,7 +71,9 @@ Deno.serve(async (req: Request) => {
     const recipientEmail = Deno.env.get("RECIPIENT_EMAIL");
 
     if (!smtpHost || !smtpPort || !smtpEmail || !smtpPassword || !recipientEmail) {
-      console.error("[send-order-email] Missing SMTP secrets. Configure SMTP_HOST, SMTP_PORT, SMTP_EMAIL, SMTP_PASSWORD, RECIPIENT_EMAIL in Edge Function secrets.");
+      console.error(
+        "[send-order-email] Missing SMTP secrets. Configure SMTP_HOST, SMTP_PORT, SMTP_EMAIL, SMTP_PASSWORD, RECIPIENT_EMAIL in Edge Function secrets.",
+      );
       return new Response(
         JSON.stringify({
           success: false,
@@ -50,26 +84,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const subject = body.subject ?? `New order — ${body.offerName ?? "RAHIQ Parfums"}`;
-    const emailBody = body.body ?? [
-      `New Order — RAHIQ Parfums`,
-      ``,
-      `Offer: ${body.offerName ?? "N/A"}`,
-      `Name: ${body.fullName ?? "N/A"}`,
-      `Phone: ${body.phone ?? "N/A"}`,
-      `Wilaya: ${body.wilaya ?? "N/A"}`,
-      `Commune: ${body.commune ?? "N/A"}`,
-      `Delivery: ${body.deliveryType ?? "N/A"}`,
-      `Quantity: ${body.quantity ?? 1}`,
-      `Unit price: ${body.unitPrice ?? 0} DA`,
-      `Delivery: ${body.deliveryPrice === 0 ? "Free" : `${body.deliveryPrice ?? 0} DA`}`,
-      `Total: ${body.total ?? 0} DA`,
-      `Order Ref: ${body.orderRef ?? "N/A"}`,
-      `Date: ${body.orderDateTime ? new Date(body.orderDateTime).toLocaleString() : new Date().toLocaleString()}`,
-      `Order Ref: ${body.orderRef ?? "N/A"}`,
-      ``,
-      `---`,
-      `This order was submitted from the RAHIQ Parfums website.`,
-    ].join("\n");
+    const emailBody = body.body ?? buildOrderBody(body);
 
     const sent = await sendViaSmtp({
       host: smtpHost,
@@ -118,6 +133,7 @@ function base64Encode(s: string): string {
 }
 
 function encodeHeader(s: string): string {
+  // eslint-disable-next-line no-control-regex
   if (/[^\x00-\x7F]/.test(s)) {
     return `=?UTF-8?B?${base64Encode(s)}?=`;
   }
@@ -223,13 +239,24 @@ async function sendViaSmtp(opts: {
     await readResponse();
 
     await write("QUIT");
-    try { await readResponse(); } catch { /* server may close immediately */ }
+    try {
+      await readResponse();
+    } catch {
+      /* server may close immediately */
+    }
 
     return true;
   } catch (err) {
-    console.error("[send-order-email] SMTP error:", err instanceof Error ? err.message : String(err));
+    console.error(
+      "[send-order-email] SMTP error:",
+      err instanceof Error ? err.message : String(err),
+    );
     return false;
   } finally {
-    try { conn!.close(); } catch { /* ignore */ }
+    try {
+      conn!.close();
+    } catch {
+      /* ignore */
+    }
   }
 }

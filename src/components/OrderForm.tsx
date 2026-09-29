@@ -1,15 +1,14 @@
 import { useMemo, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useI18n } from "@/lib/i18n";
+import { useLocalized } from "@/lib/use-localized";
 import { useDeliveryPrices } from "@/lib/data";
 import { WILAYAS } from "@/lib/algeria";
+import { CAMPUS_DELIVERY_PRICE, CAMPUS_RESIDENCES } from "@/lib/campus";
 import { formatPrice } from "@/lib/currency";
 import { sendOrderEmail } from "@/lib/email-service";
 import { meta } from "@/lib/meta";
-import {
-  generateOrderRef,
-  setOrderSuccessState,
-} from "@/lib/order-success";
+import { generateOrderRef, setOrderSuccessState } from "@/lib/order-success";
 import { cn } from "@/lib/utils";
 
 type OfferProp = {
@@ -21,6 +20,8 @@ type OfferProp = {
   discount?: { enabled: boolean; newPrice: number };
 };
 
+type DeliveryMode = "standard" | "campus";
+
 function getEffectivePrice(offer: OfferProp) {
   if (offer.discount?.enabled && offer.discount.newPrice > 0) {
     return offer.discount.newPrice;
@@ -30,6 +31,7 @@ function getEffectivePrice(offer: OfferProp) {
 
 export function OrderForm({ offer }: { offer: OfferProp }) {
   const { t, lang } = useI18n();
+  const localize = useLocalized();
   const navigate = useNavigate();
   const { data: deliveryPricing = {} } = useDeliveryPrices();
   const wilayas = WILAYAS;
@@ -37,6 +39,8 @@ export function OrderForm({ offer }: { offer: OfferProp }) {
 
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
+  const [deliveryMode, setDeliveryMode] = useState<DeliveryMode>("standard");
+  const [residence, setResidence] = useState("");
   const [wilayaCode, setWilayaCode] = useState("");
   const [commune, setCommune] = useState("");
   const [manualCommune, setManualCommune] = useState("");
@@ -47,17 +51,20 @@ export function OrderForm({ offer }: { offer: OfferProp }) {
   const [result, setResult] = useState<{ ok: boolean; msg: string } | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  const isCampus = deliveryMode === "campus";
+
   const unitPrice = getEffectivePrice(offer);
   const isFreeDelivery = offer.freeDelivery;
   const maxQty = offer.maxQuantity ?? 99;
 
   const deliveryPrice = useMemo(() => {
+    if (isCampus) return CAMPUS_DELIVERY_PRICE;
     if (!wilayaCode) return null;
     if (isFreeDelivery) return 0;
     const pricing = deliveryPricing[wilayaCode];
     if (!pricing) return null;
     return deliveryType === "home" ? pricing.home : pricing.office;
-  }, [wilayaCode, deliveryType, isFreeDelivery, deliveryPricing]);
+  }, [isCampus, wilayaCode, deliveryType, isFreeDelivery, deliveryPricing]);
 
   const subtotal = unitPrice * quantity;
   const total = deliveryPrice != null ? subtotal + deliveryPrice : subtotal;
@@ -67,7 +74,12 @@ export function OrderForm({ offer }: { offer: OfferProp }) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const effectiveCommune = useManualCommune ? manualCommune.trim() : commune;
-    if (!fullName || !phone || !wilayaCode || !effectiveCommune) return;
+    if (!fullName || !phone) return;
+    if (isCampus) {
+      if (!residence) return;
+    } else if (!wilayaCode || !effectiveCommune) {
+      return;
+    }
 
     if (!checkoutStarted.current) {
       checkoutStarted.current = true;
@@ -93,9 +105,15 @@ export function OrderForm({ offer }: { offer: OfferProp }) {
       offerName: lang === "ar" ? offer.name.ar : offer.name.en,
       fullName,
       phone,
-      wilaya: wilayaLabel,
-      commune: effectiveCommune,
-      deliveryType: deliveryType === "home" ? t("order.deliveryHome") : t("order.deliveryOffice"),
+      wilaya: isCampus ? "" : wilayaLabel,
+      commune: isCampus ? "" : effectiveCommune,
+      deliveryType: isCampus
+        ? t("order.deliveryCampus")
+        : deliveryType === "home"
+          ? t("order.deliveryHome")
+          : t("order.deliveryOffice"),
+      deliveryMode,
+      residence: isCampus ? residence : undefined,
       quantity,
       unitPrice,
       deliveryPrice: deliveryPrice ?? 0,
@@ -135,9 +153,16 @@ export function OrderForm({ offer }: { offer: OfferProp }) {
 
   const inputClass =
     "w-full rounded-lg border border-border bg-background px-4 py-3.5 text-base font-normal text-foreground transition-colors focus:border-primary focus:outline-none";
-  const labelClass =
-    "mb-2 block text-sm font-normal tracking-[0.08em] text-muted-foreground";
+  const labelClass = "mb-2 block text-sm font-normal tracking-[0.08em] text-muted-foreground";
   const selectClass = cn(inputClass, "appearance-none cursor-pointer");
+
+  const modeButtonClass = (active: boolean) =>
+    cn(
+      "min-w-0 flex-1 rounded-lg border px-3 py-3 text-sm font-normal transition-colors",
+      active
+        ? "border-primary bg-primary/10 text-foreground"
+        : "border-border text-muted-foreground hover:text-foreground",
+    );
 
   return (
     <div className="space-y-8">
@@ -168,12 +193,13 @@ export function OrderForm({ offer }: { offer: OfferProp }) {
             value={phone}
             onChange={(e) => {
               const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
-              const formatted = digits.length > 4
-                ? digits.slice(0, 4) +
-                  (digits.length > 4 ? " " + digits.slice(4, 6) : "") +
-                  (digits.length > 6 ? " " + digits.slice(6, 8) : "") +
-                  (digits.length > 8 ? " " + digits.slice(8, 10) : "")
-                : digits;
+              const formatted =
+                digits.length > 4
+                  ? digits.slice(0, 4) +
+                    (digits.length > 4 ? " " + digits.slice(4, 6) : "") +
+                    (digits.length > 6 ? " " + digits.slice(6, 8) : "") +
+                    (digits.length > 8 ? " " + digits.slice(8, 10) : "")
+                  : digits;
               setPhone(formatted.trim());
             }}
             placeholder={t("order.phonePlaceholder")}
@@ -183,86 +209,138 @@ export function OrderForm({ offer }: { offer: OfferProp }) {
         </div>
 
         <div>
-          <label className={labelClass} htmlFor="wilaya">
-            {t("order.wilaya")}
-          </label>
-          <select
-            id="wilaya"
-            required
-            value={wilayaCode}
-            onChange={(e) => {
-              setWilayaCode(e.target.value);
-              setCommune("");
-              setManualCommune("");
-              setUseManualCommune(false);
-            }}
-            className={selectClass}
-          >
-            <option value="" disabled>
-              {t("order.wilayaPlaceholder")}
-            </option>
-            {wilayas.map((w) => (
-              <option key={w.code} value={w.code}>
-                {w.code} {lang === "ar" ? w.nameAr : w.nameEn}
-              </option>
-            ))}
-          </select>
+          <span className={labelClass} id="delivery-mode-label">
+            {t("order.deliveryMode")}
+          </span>
+          <div role="radiogroup" aria-labelledby="delivery-mode-label" className="flex gap-2">
+            <button
+              type="button"
+              role="radio"
+              aria-checked={!isCampus}
+              onClick={() => setDeliveryMode("standard")}
+              className={modeButtonClass(!isCampus)}
+            >
+              {t("order.deliveryStandard")}
+            </button>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={isCampus}
+              onClick={() => setDeliveryMode("campus")}
+              className={modeButtonClass(isCampus)}
+            >
+              {t("order.deliveryCampus")}
+            </button>
+          </div>
         </div>
 
-        <div>
-          <label className={labelClass} htmlFor="commune">
-            {t("order.commune")}
-          </label>
-          <select
-            id="commune"
-            required={!useManualCommune}
-            value={commune}
-            onChange={(e) => setCommune(e.target.value)}
-            disabled={!wilayaCode || useManualCommune}
-            className={cn(selectClass, (!wilayaCode || useManualCommune) && "opacity-50")}
-          >
-            <option value="" disabled>
-              {t("order.communePlaceholder")}
-            </option>
-            {selectedWilaya?.communes.map((m) => (
-              <option key={m.nameAr} value={lang === "ar" ? m.nameAr : m.nameEn}>
-                {lang === "ar" ? m.nameAr : m.nameEn}
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            onClick={() => setUseManualCommune((v) => !v)}
-            className="mt-1.5 text-xs font-normal tracking-[0.04em] text-primary transition-colors hover:text-primary/70"
-          >
-            {t("order.communeNotFound")}
-          </button>
-          {useManualCommune && (
-            <input
-              type="text"
+        {isCampus ? (
+          <div>
+            <label className={labelClass} htmlFor="residence">
+              {t("order.residence")}
+            </label>
+            <select
+              id="residence"
               required
-              value={manualCommune}
-              onChange={(e) => setManualCommune(e.target.value)}
-              placeholder={t("order.communeNotFound")}
-              className={cn(selectClass, "mt-2")}
-            />
-          )}
-        </div>
+              value={residence}
+              onChange={(e) => setResidence(e.target.value)}
+              className={selectClass}
+            >
+              <option value="" disabled>
+                {t("order.residencePlaceholder")}
+              </option>
+              {CAMPUS_RESIDENCES.map((option) => (
+                <option key={option.ar} value={localize(option)}>
+                  {localize(option)}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          <>
+            <div>
+              <label className={labelClass} htmlFor="wilaya">
+                {t("order.wilaya")}
+              </label>
+              <select
+                id="wilaya"
+                required
+                value={wilayaCode}
+                onChange={(e) => {
+                  setWilayaCode(e.target.value);
+                  setCommune("");
+                  setManualCommune("");
+                  setUseManualCommune(false);
+                }}
+                className={selectClass}
+              >
+                <option value="" disabled>
+                  {t("order.wilayaPlaceholder")}
+                </option>
+                {wilayas.map((w) => (
+                  <option key={w.code} value={w.code}>
+                    {w.code} {lang === "ar" ? w.nameAr : w.nameEn}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-        <div>
-          <label className={labelClass} htmlFor="deliveryType">
-            {t("order.deliveryType")}
-          </label>
-          <select
-            id="deliveryType"
-            value={deliveryType}
-            onChange={(e) => setDeliveryType(e.target.value as "home" | "office")}
-            className={selectClass}
-          >
-            <option value="home">{t("order.deliveryHome")}</option>
-            <option value="office">{t("order.deliveryOffice")}</option>
-          </select>
-        </div>
+            <div>
+              <label className={labelClass} htmlFor="commune">
+                {t("order.commune")}
+              </label>
+              <select
+                id="commune"
+                required={!useManualCommune}
+                value={commune}
+                onChange={(e) => setCommune(e.target.value)}
+                disabled={!wilayaCode || useManualCommune}
+                className={cn(selectClass, (!wilayaCode || useManualCommune) && "opacity-50")}
+              >
+                <option value="" disabled>
+                  {t("order.communePlaceholder")}
+                </option>
+                {selectedWilaya?.communes.map((m) => (
+                  <option key={m.nameAr} value={lang === "ar" ? m.nameAr : m.nameEn}>
+                    {lang === "ar" ? m.nameAr : m.nameEn}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => setUseManualCommune((v) => !v)}
+                className="mt-1.5 text-xs font-normal tracking-[0.04em] text-primary transition-colors hover:text-primary/70"
+              >
+                {t("order.communeNotFound")}
+              </button>
+              {useManualCommune && (
+                <input
+                  type="text"
+                  required
+                  value={manualCommune}
+                  onChange={(e) => setManualCommune(e.target.value)}
+                  placeholder={t("order.communeNotFound")}
+                  className={cn(selectClass, "mt-2")}
+                />
+              )}
+            </div>
+
+            <div>
+              <label className={labelClass} htmlFor="deliveryType">
+                {t("order.deliveryType")}
+              </label>
+              <select
+                id="deliveryType"
+                value={deliveryType}
+                onChange={(e) => setDeliveryType(e.target.value as "home" | "office")}
+                className={selectClass}
+              >
+                <option value="home">{t("order.deliveryHome")}</option>
+                <option value="office">{t("order.deliveryOffice")}</option>
+              </select>
+            </div>
+          </>
+        )}
 
         <div>
           <label className={labelClass}>{t("order.quantity")}</label>
@@ -315,6 +393,12 @@ export function OrderForm({ offer }: { offer: OfferProp }) {
             </dt>
             <dd className="tabular-nums text-foreground">{formatPrice(subtotal)}</dd>
           </div>
+          {isCampus && residence && (
+            <div className="flex items-center justify-between gap-4 text-base font-normal">
+              <dt className="text-muted-foreground">{t("summary.residence")}</dt>
+              <dd className="truncate text-foreground">{residence}</dd>
+            </div>
+          )}
           <div className="flex items-center justify-between text-base font-normal">
             <dt className="text-muted-foreground">{t("summary.delivery")}</dt>
             <dd className="tabular-nums text-foreground">
@@ -328,9 +412,7 @@ export function OrderForm({ offer }: { offer: OfferProp }) {
           <div className="h-px bg-border/60" />
           <div className="flex items-center justify-between text-base font-normal">
             <dt className="tracking-[0.1em] text-foreground">{t("summary.total")}</dt>
-            <dd className="text-2xl font-bold tabular-nums text-primary">
-              {formatPrice(total)}
-            </dd>
+            <dd className="text-2xl font-bold tabular-nums text-primary">{formatPrice(total)}</dd>
           </div>
         </dl>
       </div>

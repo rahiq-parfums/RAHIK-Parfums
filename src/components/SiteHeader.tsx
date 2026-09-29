@@ -6,9 +6,6 @@ import { useI18n } from "@/lib/i18n";
 
 export const NAV_ITEMS = [
   { to: "/", key: "nav.home" },
-  { to: "/perfumes", key: "nav.perfumes" },
-  { to: "/offers", key: "nav.offers" },
-  { to: "/discounts", key: "nav.discounts" },
   { to: "/contact", key: "nav.contact" },
 ] as const;
 
@@ -42,7 +39,7 @@ export function SiteHeader({ revealLogoOnScroll = false }: { revealLogoOnScroll?
       </div>
 
       <nav className="border-t border-border/50">
-        <ul className="mx-auto flex max-w-5xl items-center gap-8 overflow-x-auto px-5 py-3.5 sm:justify-center sm:px-8 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <ul className="mx-auto flex max-w-5xl items-center gap-8 overflow-x-auto px-5 py-3 sm:justify-center sm:px-8 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {NAV_ITEMS.map((item) => (
             <li key={item.to} className="shrink-0">
               <Link

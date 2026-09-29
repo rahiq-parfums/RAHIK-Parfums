@@ -14,6 +14,19 @@ import {
   ConfirmDialog,
 } from "@/components/admin/AdminLayout";
 import { Plus, Pencil, Trash2, Copy, Eye, EyeOff, GripVertical } from "lucide-react";
+import type { PerfumeGender } from "@/lib/catalog";
+
+const GENDER_OPTIONS: { value: PerfumeGender; label: string }[] = [
+  { value: "women", label: "Women — عطور نسائية" },
+  { value: "men", label: "Men — عطور رجالية" },
+  { value: "unisex", label: "Unisex — للجنسين" },
+];
+
+const GENDER_LABEL: Record<PerfumeGender, string> = {
+  women: "عطور نسائية",
+  men: "عطور رجالية",
+  unisex: "للجنسين",
+};
 
 export const Route = createFileRoute("/admin/products")({
   head: () => ({ meta: [{ title: "Perfumes — Admin" }] }),
@@ -28,6 +41,7 @@ type PerfumeRow = {
   desc_ar: string;
   desc_en: string;
   main_image: string;
+  gender: PerfumeGender;
   rating_spring: number;
   rating_summer: number;
   rating_autumn: number;
@@ -54,6 +68,7 @@ const emptyPerfume = (): Partial<PerfumeRow> => ({
   desc_ar: "",
   desc_en: "",
   main_image: "",
+  gender: "unisex",
   rating_spring: 50,
   rating_summer: 50,
   rating_autumn: 50,
@@ -68,7 +83,15 @@ const emptyPerfume = (): Partial<PerfumeRow> => ({
   display_order: 0,
 });
 
-function RatingRow({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
+function RatingRow({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+}) {
   return (
     <div className="flex items-center gap-3">
       <span className="w-40 text-xs text-muted-foreground shrink-0">{label}</span>
@@ -114,7 +137,11 @@ function AdminProductsPage() {
 
       let perfumeId = editing.id;
       if (isNew) {
-        const { data, error } = await supabase.from("perfumes").insert(payload).select("id").single();
+        const { data, error } = await supabase
+          .from("perfumes")
+          .insert(payload)
+          .select("id")
+          .single();
         if (error) throw error;
         perfumeId = data.id;
       } else {
@@ -126,7 +153,12 @@ function AdminProductsPage() {
       await supabase.from("perfume_versions").delete().eq("perfume_id", perfumeId!);
       if (versions.length > 0) {
         await supabase.from("perfume_versions").insert(
-          versions.map((v, i) => ({ perfume_id: perfumeId, label_ar: v.label_ar, label_en: v.label_en, display_order: i }))
+          versions.map((v, i) => ({
+            perfume_id: perfumeId,
+            label_ar: v.label_ar,
+            label_en: v.label_en,
+            display_order: i,
+          })),
         );
       }
 
@@ -134,7 +166,11 @@ function AdminProductsPage() {
       await supabase.from("perfume_gallery").delete().eq("perfume_id", perfumeId!);
       if (gallery.length > 0) {
         await supabase.from("perfume_gallery").insert(
-          gallery.map((g, i) => ({ perfume_id: perfumeId, image_url: g.image_url, display_order: i }))
+          gallery.map((g, i) => ({
+            perfume_id: perfumeId,
+            image_url: g.image_url,
+            display_order: i,
+          })),
         );
       }
     },
@@ -173,13 +209,21 @@ function AdminProductsPage() {
   function startEdit(p: PerfumeRow) {
     setIsNew(false);
     setEditing({ ...p });
-    setVersions(p.versions?.map((v) => ({ id: v.id, label_ar: v.label_ar, label_en: v.label_en })) ?? []);
+    setVersions(
+      p.versions?.map((v) => ({ id: v.id, label_ar: v.label_ar, label_en: v.label_en })) ?? [],
+    );
     setGallery(p.gallery?.map((g) => ({ id: g.id, image_url: g.image_url })) ?? []);
   }
 
   function startDuplicate(p: PerfumeRow) {
     setIsNew(true);
-    setEditing({ ...p, id: undefined, slug: `${p.slug}-copy`, name_ar: `${p.name_ar} (نسخة)`, name_en: `${p.name_en} (Copy)` });
+    setEditing({
+      ...p,
+      id: undefined,
+      slug: `${p.slug}-copy`,
+      name_ar: `${p.name_ar} (نسخة)`,
+      name_en: `${p.name_en} (Copy)`,
+    });
     setVersions(p.versions?.map((v) => ({ label_ar: v.label_ar, label_en: v.label_en })) ?? []);
     setGallery(p.gallery?.map((g) => ({ image_url: g.image_url })) ?? []);
   }
@@ -255,15 +299,46 @@ function AdminProductsPage() {
                 placeholder="https://..."
               />
               {editing.main_image && (
-                <img src={editing.main_image} alt="" className="mt-2 h-20 w-20 rounded-md object-cover" />
+                <img
+                  src={editing.main_image}
+                  alt=""
+                  className="mt-2 h-20 w-20 rounded-md object-cover"
+                />
               )}
             </AdminField>
             <AdminField label="URL Slug">
               <AdminInput
                 value={editing.slug ?? ""}
-                onChange={(e) => setEditing({ ...editing, slug: e.target.value.toLowerCase().replace(/\s+/g, "-") })}
+                onChange={(e) =>
+                  setEditing({
+                    ...editing,
+                    slug: e.target.value.toLowerCase().replace(/\s+/g, "-"),
+                  })
+                }
                 placeholder="e.g. oud-royal"
               />
+            </AdminField>
+
+            <AdminField
+              label="Category (Gender)"
+              hint="Drives the Women's / Men's filters on the Home page."
+            >
+              <div className="flex flex-wrap gap-2">
+                {GENDER_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setEditing({ ...editing, gender: option.value })}
+                    className={`rounded-lg border px-3.5 py-2 text-sm transition-colors ${
+                      (editing.gender ?? "unisex") === option.value
+                        ? "border-primary bg-primary/10 text-foreground"
+                        : "border-border text-muted-foreground hover:border-primary/50"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
             </AdminField>
 
             {/* Gallery */}
@@ -351,26 +426,66 @@ function AdminProductsPage() {
                 Season Ratings
               </p>
               <div className="space-y-2.5">
-                <RatingRow label="Spring" value={editing.rating_spring ?? 50} onChange={(v) => setEditing({ ...editing, rating_spring: v })} />
-                <RatingRow label="Summer" value={editing.rating_summer ?? 50} onChange={(v) => setEditing({ ...editing, rating_summer: v })} />
-                <RatingRow label="Autumn" value={editing.rating_autumn ?? 50} onChange={(v) => setEditing({ ...editing, rating_autumn: v })} />
-                <RatingRow label="Winter" value={editing.rating_winter ?? 50} onChange={(v) => setEditing({ ...editing, rating_winter: v })} />
+                <RatingRow
+                  label="Spring"
+                  value={editing.rating_spring ?? 50}
+                  onChange={(v) => setEditing({ ...editing, rating_spring: v })}
+                />
+                <RatingRow
+                  label="Summer"
+                  value={editing.rating_summer ?? 50}
+                  onChange={(v) => setEditing({ ...editing, rating_summer: v })}
+                />
+                <RatingRow
+                  label="Autumn"
+                  value={editing.rating_autumn ?? 50}
+                  onChange={(v) => setEditing({ ...editing, rating_autumn: v })}
+                />
+                <RatingRow
+                  label="Winter"
+                  value={editing.rating_winter ?? 50}
+                  onChange={(v) => setEditing({ ...editing, rating_winter: v })}
+                />
               </div>
               <p className="mb-3 mt-4 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 Time of Day
               </p>
               <div className="space-y-2.5">
-                <RatingRow label="Day" value={editing.rating_day ?? 50} onChange={(v) => setEditing({ ...editing, rating_day: v })} />
-                <RatingRow label="Night" value={editing.rating_night ?? 50} onChange={(v) => setEditing({ ...editing, rating_night: v })} />
+                <RatingRow
+                  label="Day"
+                  value={editing.rating_day ?? 50}
+                  onChange={(v) => setEditing({ ...editing, rating_day: v })}
+                />
+                <RatingRow
+                  label="Night"
+                  value={editing.rating_night ?? 50}
+                  onChange={(v) => setEditing({ ...editing, rating_night: v })}
+                />
               </div>
               <p className="mb-3 mt-4 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 Community Reactions
               </p>
               <div className="space-y-2.5">
-                <RatingRow label="Loved it" value={editing.rating_loved ?? 50} onChange={(v) => setEditing({ ...editing, rating_loved: v })} />
-                <RatingRow label="Good" value={editing.rating_good ?? 40} onChange={(v) => setEditing({ ...editing, rating_good: v })} />
-                <RatingRow label="Not Recommended" value={editing.rating_not_recommended ?? 10} onChange={(v) => setEditing({ ...editing, rating_not_recommended: v })} />
-                <RatingRow label="Community Score" value={editing.community_score ?? 80} onChange={(v) => setEditing({ ...editing, community_score: v })} />
+                <RatingRow
+                  label="Loved it"
+                  value={editing.rating_loved ?? 50}
+                  onChange={(v) => setEditing({ ...editing, rating_loved: v })}
+                />
+                <RatingRow
+                  label="Good"
+                  value={editing.rating_good ?? 40}
+                  onChange={(v) => setEditing({ ...editing, rating_good: v })}
+                />
+                <RatingRow
+                  label="Not Recommended"
+                  value={editing.rating_not_recommended ?? 10}
+                  onChange={(v) => setEditing({ ...editing, rating_not_recommended: v })}
+                />
+                <RatingRow
+                  label="Community Score"
+                  value={editing.community_score ?? 80}
+                  onChange={(v) => setEditing({ ...editing, community_score: v })}
+                />
               </div>
             </div>
 
@@ -379,7 +494,9 @@ function AdminProductsPage() {
                 <AdminInput
                   type="number"
                   value={editing.display_order ?? 0}
-                  onChange={(e) => setEditing({ ...editing, display_order: Number(e.target.value) })}
+                  onChange={(e) =>
+                    setEditing({ ...editing, display_order: Number(e.target.value) })
+                  }
                 />
               </AdminField>
               <AdminField label="Visibility">
@@ -396,10 +513,7 @@ function AdminProductsPage() {
             </div>
 
             <div className="flex gap-3 pt-1">
-              <AdminButton
-                onClick={() => saveMutation.mutate()}
-                disabled={saveMutation.isPending}
-              >
+              <AdminButton onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
                 {saveMutation.isPending ? "Saving..." : "Save Perfume"}
               </AdminButton>
               <AdminButton variant="ghost" onClick={() => setEditing(null)}>
@@ -432,14 +546,19 @@ function AdminProductsPage() {
             <AdminCard key={p.id} className="flex items-center gap-4">
               <GripVertical className="h-4 w-4 text-muted-foreground/40 shrink-0" />
               {p.main_image && (
-                <img src={p.main_image} alt="" className="h-14 w-14 rounded-lg object-cover shrink-0" />
+                <img
+                  src={p.main_image}
+                  alt=""
+                  className="h-14 w-14 rounded-lg object-cover shrink-0"
+                />
               )}
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">
                   {p.name_ar} / {p.name_en}
                 </p>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  {p.versions?.length ?? 0} versions · Score {p.community_score}%
+                  {GENDER_LABEL[p.gender ?? "unisex"]} · {p.versions?.length ?? 0} versions · Score{" "}
+                  {p.community_score}%
                 </p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
@@ -452,9 +571,18 @@ function AdminProductsPage() {
                   title={p.is_visible ? "Hide" : "Show"}
                   onClick={() => toggleVisibility.mutate({ id: p.id, is_visible: !p.is_visible })}
                 >
-                  {p.is_visible ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                  {p.is_visible ? (
+                    <EyeOff className="h-3.5 w-3.5" />
+                  ) : (
+                    <Eye className="h-3.5 w-3.5" />
+                  )}
                 </AdminButton>
-                <AdminButton variant="ghost" size="sm" onClick={() => startDuplicate(p)} title="Duplicate">
+                <AdminButton
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => startDuplicate(p)}
+                  title="Duplicate"
+                >
                   <Copy className="h-3.5 w-3.5" />
                 </AdminButton>
                 <AdminButton variant="ghost" size="sm" onClick={() => startEdit(p)}>

@@ -34,6 +34,15 @@ const translations: Record<Language, Dict> = {
 
     "home.intro":
       "دار عطور جزائرية تختار القليل وتقدّمه بعناية. تشكيلات محدودة، روائح صافية، وتجربة هادئة تليق بالذوق الرفيع.",
+    "home.filtersLabel": "تصفية المنتجات",
+    "home.filter.discounts": "التخفيضات",
+    "home.filter.women": "عطور نسائية",
+    "home.filter.men": "عطور رجالية",
+    "home.offersLabel": "عروض الدار",
+    "home.empty": "لا يوجد شيء في هذا القسم حاليًا.",
+    "home.catalogCta.title": "اكتشف عالم العطور",
+    "home.catalogCta.text": "تشكيلة الدار كاملة، مرتّبة للاكتشاف.",
+    "home.catalogCta.cta": "تصفح العطور",
     "home.card.perfumes.title": "العطور",
     "home.card.perfumes.text": "تشكيلة مختارة من العطور الفاخرة.",
     "home.card.perfumes.cta": "اكتشف",
@@ -45,9 +54,19 @@ const translations: Record<Language, Dict> = {
     "home.card.discounts.cta": "اطلب",
     "home.card.action": "اكتشف",
 
+    "campus.title": "عطورك إلى الإقامة",
+    "campus.text":
+      "العطور تصل إلى سكنك الجامعي مباشرة. اطلب من عروض الدار واختر إقامتك، ويتكفّل رحيق بالباقي.",
+    "campus.point1": "تسليم داخل الإقامة الجامعية",
+    "campus.point2": "بدون تنقّل إضافي ولا انتظار",
+    "campus.point3": "نفس الأسعار المطبّقة على المتجر",
+    "campus.cta": "اطلب الآن",
+    "campus.imageAlt": "طلبة في الإقامة الجامعية",
+
     "perfumes.title": "العطور",
     "perfumes.intro": "تشكيلة مختارة من عطور الدار، تُقدّم للاكتشاف والتأمل.",
     "perfumes.item": "عطر",
+    "perfumes.inStock": "متوفر في الدار",
     "perfumes.placeholder": "وصف مختصر للعطر يُضاف لاحقًا.",
 
     "badge.original": "أصلي",
@@ -94,6 +113,9 @@ const translations: Record<Language, Dict> = {
     "offerDetails.orderForm": "نموذج الطلب",
     "offerDetails.orderFormPlaceholder": "سيُضاف نموذج الطلب هنا لاحقًا.",
     "offerDetails.backToOffers": "العودة إلى العروض",
+    "offerDetails.loadError": "تعذّر تحميل هذه الباقة",
+    "offerDetails.loadErrorText": "حدث خطأ أثناء جلب البيانات. حاول مرة أخرى.",
+    "offerDetails.retry": "أعد المحاولة",
 
     "card.image": "صورة",
     "card.soon": "قريبًا",
@@ -134,6 +156,11 @@ const translations: Record<Language, Dict> = {
     "order.deliveryType": "نوع التوصيل",
     "order.deliveryHome": "التوصيل إلى المنزل",
     "order.deliveryOffice": "التوصيل إلى المكتب",
+    "order.deliveryMode": "طريقة الاستلام",
+    "order.deliveryStandard": "توصيل عادي",
+    "order.deliveryCampus": "الإقامة الجامعية",
+    "order.residence": "الإقامة الجامعية",
+    "order.residencePlaceholder": "اختر الإقامة",
     "order.quantity": "الكمية",
     "order.submit": "إرسال الطلب",
     "order.submitNow": "اطلب الآن",
@@ -150,6 +177,7 @@ const translations: Record<Language, Dict> = {
     "summary.free": "مجاني",
     "summary.total": "المجموع",
     "summary.selectWilaya": "اختر الولاية لحساب التوصيل",
+    "summary.residence": "الإقامة",
 
     "admin.title": "لوحة التحكم",
     "admin.dashboard": "لوحة التحكم",
@@ -258,6 +286,15 @@ const translations: Record<Language, Dict> = {
 
     "home.intro":
       "An Algerian perfume house that chooses few and presents them with care. Limited collections, clear compositions, and a calm experience.",
+    "home.filtersLabel": "Product filters",
+    "home.filter.discounts": "Discounts",
+    "home.filter.women": "Women's",
+    "home.filter.men": "Men's",
+    "home.offersLabel": "House offers",
+    "home.empty": "Nothing in this section right now.",
+    "home.catalogCta.title": "Discover the world of RAHIQ",
+    "home.catalogCta.text": "The full house collection, arranged for discovery.",
+    "home.catalogCta.cta": "Browse perfumes",
     "home.card.perfumes.title": "Perfumes",
     "home.card.perfumes.text": "A curated selection of refined fragrances.",
     "home.card.perfumes.cta": "Discover",
@@ -269,9 +306,20 @@ const translations: Record<Language, Dict> = {
     "home.card.discounts.cta": "Order",
     "home.card.action": "Discover",
 
+    "campus.title": "Your fragrance, to your residence",
+    "campus.text":
+      "Fragrances are delivered straight to your university residence. Order from the house offers, pick your residence, and RAHIQ handles the rest.",
+    "campus.point1": "Delivered inside the university residence",
+    "campus.point2": "No extra trip and no waiting",
+    "campus.point3": "The same prices as the store",
+    "campus.cta": "Order now",
+    "campus.imageAlt": "Students at the university residence",
+
     "perfumes.title": "Perfumes",
-    "perfumes.intro": "A curated selection of the house fragrances, presented for discovery and contemplation.",
+    "perfumes.intro":
+      "A curated selection of the house fragrances, presented for discovery and contemplation.",
     "perfumes.item": "Perfume",
+    "perfumes.inStock": "Available at the house",
     "perfumes.placeholder": "A short fragrance description will be added later.",
 
     "badge.original": "Original",
@@ -318,6 +366,9 @@ const translations: Record<Language, Dict> = {
     "offerDetails.orderForm": "Order Form",
     "offerDetails.orderFormPlaceholder": "The order form will be added here later.",
     "offerDetails.backToOffers": "Back to offers",
+    "offerDetails.loadError": "This set could not be loaded",
+    "offerDetails.loadErrorText": "Something went wrong while fetching the data. Please try again.",
+    "offerDetails.retry": "Try again",
 
     "card.image": "Image",
     "card.soon": "Soon",
@@ -334,7 +385,8 @@ const translations: Record<Language, Dict> = {
     "footer.rights": "All Rights Reserved",
 
     "orderSuccess.title": "Order Confirmed",
-    "orderSuccess.message": "Thank you. Your order has been submitted successfully and we will contact you shortly to confirm delivery.",
+    "orderSuccess.message":
+      "Thank you. Your order has been submitted successfully and we will contact you shortly to confirm delivery.",
     "orderSuccess.reference": "Order Reference",
     "orderSuccess.offer": "Offer",
     "orderSuccess.quantity": "Quantity",
@@ -343,7 +395,8 @@ const translations: Record<Language, Dict> = {
     "orderSuccess.total": "Total",
     "orderSuccess.backHome": "Back to Home",
     "orderSuccess.backOffers": "Browse other offers",
-    "orderSuccess.noOrder": "No order to display. The session may have expired or this page was accessed directly.",
+    "orderSuccess.noOrder":
+      "No order to display. The session may have expired or this page was accessed directly.",
 
     "order.title": "Order Form",
     "order.fullName": "Full Name",
@@ -358,6 +411,11 @@ const translations: Record<Language, Dict> = {
     "order.deliveryType": "Delivery Type",
     "order.deliveryHome": "Delivery to Home",
     "order.deliveryOffice": "Delivery to Office",
+    "order.deliveryMode": "Pickup Method",
+    "order.deliveryStandard": "Standard delivery",
+    "order.deliveryCampus": "University Residence",
+    "order.residence": "University Residence",
+    "order.residencePlaceholder": "Select a residence",
     "order.quantity": "Quantity",
     "order.submit": "Submit Order",
     "order.submitNow": "Order Now",
@@ -374,6 +432,7 @@ const translations: Record<Language, Dict> = {
     "summary.free": "Free",
     "summary.total": "Total",
     "summary.selectWilaya": "Select a wilaya to calculate delivery",
+    "summary.residence": "Residence",
 
     "admin.title": "Admin Dashboard",
     "admin.dashboard": "Dashboard",

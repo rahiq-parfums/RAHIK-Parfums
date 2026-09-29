@@ -1,7 +1,22 @@
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { BrandLogo, BrandName } from "@/components/BrandLogo";
 import { SiteLayout } from "@/components/SiteLayout";
+import { OfferCard } from "@/components/OfferCard";
+import { PerfumeCard } from "@/components/PerfumeCard";
+import { CampusSection } from "@/components/CampusSection";
+import { HomeFilterBar, type HomeFilter } from "@/components/HomeFilters";
 import { useI18n } from "@/lib/i18n";
+import {
+  useOffers,
+  usePerfumes,
+  effectiveOfferPrice,
+  referenceOfferPrice,
+  findOfferForPerfume,
+  indexOffersByPerfume,
+  type CatalogOffer,
+} from "@/lib/data";
+import type { Perfume } from "@/lib/catalog";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -24,85 +39,177 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-const CATEGORY_CARDS = [
-  {
-    to: "/perfumes",
-    titleKey: "home.card.perfumes.title",
-    textKey: "home.card.perfumes.text",
-    ctaKey: "home.card.perfumes.cta",
-    image: "https://images.pexels.com/photos/15096784/pexels-photo-15096784.jpeg?auto=compress&cs=tinysrgb&h=900&w=600",
-  },
-  {
-    to: "/offers",
-    titleKey: "home.card.offers.title",
-    textKey: "home.card.offers.text",
-    ctaKey: "home.card.offers.cta",
-    image: "https://images.pexels.com/photos/36482359/pexels-photo-36482359.jpeg?auto=compress&cs=tinysrgb&h=900&w=600",
-  },
-  {
-    to: "/discounts",
-    titleKey: "home.card.discounts.title",
-    textKey: "home.card.discounts.text",
-    ctaKey: "home.card.discounts.cta",
-    image: "https://images.pexels.com/photos/7702669/pexels-photo-7702669.jpeg?auto=compress&cs=tinysrgb&h=900&w=600",
-  },
-] as const;
+function SectionLabel({ children }: { children: string }) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="h-px w-6 bg-primary/50" aria-hidden="true" />
+      <h2 className="text-[0.7rem] font-semibold tracking-[0.18em] text-muted-foreground">
+        {children}
+      </h2>
+    </div>
+  );
+}
 
 function Index() {
   const { t } = useI18n();
 
+  const [filter, setFilter] = useState<HomeFilter>("discounts");
+  const promoted = useRef(false);
+
+  const { data: perfumes = [], isPending: perfumesPending } = usePerfumes(true);
+  const { data: offers = [], isPending: offersPending } = useOffers(true);
+
+  const discounted = useMemo(() => offers.filter((offer) => offer.discount?.enabled), [offers]);
+  const womenPerfumes = useMemo(() => perfumes.filter((p) => p.gender === "women"), [perfumes]);
+  const menPerfumes = useMemo(() => perfumes.filter((p) => p.gender === "men"), [perfumes]);
+  const offerByPerfume = useMemo(() => indexOffersByPerfume(offers), [offers]);
+
+  const isPending = perfumesPending || offersPending;
+
+  // The Home must never open on an empty grid: if the Dashboard currently has
+  // no active discount, fall through to the first filter that has content.
+  useEffect(() => {
+    if (promoted.current || isPending) return;
+    promoted.current = true;
+    if (discounted.length > 0) return;
+    if (womenPerfumes.length > 0) setFilter("women");
+    else if (menPerfumes.length > 0) setFilter("men");
+  }, [isPending, discounted.length, womenPerfumes.length, menPerfumes.length]);
+
+  const activeLabel = t(
+    filter === "discounts"
+      ? "home.filter.discounts"
+      : filter === "women"
+        ? "home.filter.women"
+        : "home.filter.men",
+  );
+
+  const activePerfumes: Perfume[] =
+    filter === "women" ? womenPerfumes : filter === "men" ? menPerfumes : [];
+
+  const shelfOffers: CatalogOffer[] =
+    filter === "discounts" ? offers.filter((offer) => !offer.discount?.enabled) : offers;
+
   return (
     <SiteLayout revealLogoOnScroll>
-      {/* Hero */}
-      <section className="mx-auto max-w-2xl px-6 pt-14 pb-12 text-center sm:pt-20 sm:pb-14">
-        <BrandLogo className="fade-in-up mx-auto h-24 w-auto sm:h-32" />
-        <div className="mt-6">
-          <BrandName className="text-base font-bold sm:text-lg" />
+      <section className="mx-auto max-w-5xl px-4 pt-8 pb-6 text-center sm:px-6 sm:pt-12">
+        <BrandLogo className="fade-in-up mx-auto h-16 w-auto sm:h-24" />
+        <div className="mt-4">
+          <BrandName className="text-sm font-bold sm:text-base" />
         </div>
-        <span className="mx-auto mt-7 block h-px w-12 bg-primary/60" aria-hidden="true" />
-        <p className="mx-auto mt-7 max-w-lg text-lg font-normal leading-relaxed text-foreground/80">
+        <span className="mx-auto mt-5 block h-px w-10 bg-primary/60" aria-hidden="true" />
+        <p className="mx-auto mt-5 max-w-md text-sm leading-7 text-muted-foreground sm:text-base">
           {t("home.intro")}
         </p>
       </section>
 
-      {/* Category cards */}
-      <section className="mx-auto max-w-5xl px-6 pb-20 sm:pb-28">
-        <div className="grid gap-5 sm:grid-cols-3 sm:gap-6">
-          {CATEGORY_CARDS.map((card) => (
-            <Link
-              key={card.to}
-              to={card.to}
-              className="group relative flex min-h-[22rem] flex-col justify-end overflow-hidden rounded-2xl border border-primary/20 shadow-[0_2px_30px_-20px_oklch(0.145_0_0/0.5)] transition-all duration-500 hover:-translate-y-1 hover:border-primary/50 hover:shadow-[0_16px_50px_-28px_oklch(0.145_0_0/0.6)] sm:min-h-[26rem]"
-            >
-              {/* Background image */}
-              <div className="absolute inset-0 overflow-hidden">
-                <img
-                  src={card.image}
-                  alt=""
-                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  loading="eager"
-                  decoding="async"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent" />
-              </div>
-
-              {/* Content overlay */}
-              <div className="relative z-10 p-7 text-center sm:p-8">
-                <h2 className="text-xl font-bold tracking-[0.14em] text-white sm:text-2xl">
-                  {t(card.titleKey)}
-                </h2>
-                <span className="mx-auto mt-4 block h-px w-10 bg-primary/70 transition-all duration-500 group-hover:w-16" aria-hidden="true" />
-                <p className="mt-4 text-base font-normal leading-relaxed text-white/80">
-                  {t(card.textKey)}
-                </p>
-                <span className="mt-6 inline-flex items-center rounded-full border-2 border-primary/60 bg-primary/20 px-8 py-3 text-sm font-bold tracking-[0.14em] text-primary backdrop-blur-sm transition-all duration-300 group-hover:bg-primary group-hover:text-primary-foreground">
-                  {t(card.ctaKey)}
-                </span>
-              </div>
-            </Link>
-          ))}
+      <section className="mx-auto max-w-5xl px-4 pb-12 sm:px-6 sm:pb-16">
+        <div className="mx-auto max-w-md">
+          <HomeFilterBar value={filter} onChange={setFilter} />
         </div>
+
+        <div className="mt-5 flex items-center justify-between gap-3">
+          <SectionLabel>{activeLabel}</SectionLabel>
+          {!isPending && (
+            <span className="text-[0.7rem] tabular-nums text-muted-foreground">
+              {filter === "discounts" ? discounted.length : activePerfumes.length}
+            </span>
+          )}
+        </div>
+
+        {isPending ? (
+          <div className="flex justify-center py-16">
+            <div className="h-7 w-7 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
+          </div>
+        ) : filter === "discounts" ? (
+          discounted.length > 0 ? (
+            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
+              {discounted.map((offer) => (
+                <OfferCard key={offer.id} offer={offer} withCountdown />
+              ))}
+            </div>
+          ) : (
+            <EmptyState />
+          )
+        ) : activePerfumes.length > 0 ? (
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
+            {activePerfumes.map((perfume) => {
+              const offer = findOfferForPerfume(offerByPerfume, perfume);
+              return (
+                <PerfumeCard
+                  key={perfume.id}
+                  perfume={perfume}
+                  price={
+                    offer
+                      ? {
+                          price: effectiveOfferPrice(offer),
+                          oldPrice: referenceOfferPrice(offer),
+                          offerId: offer.id,
+                        }
+                      : undefined
+                  }
+                />
+              );
+            })}
+          </div>
+        ) : (
+          <EmptyState />
+        )}
+      </section>
+
+      {shelfOffers.length > 0 && (
+        <section className="mx-auto max-w-5xl px-4 pb-12 sm:px-6 sm:pb-16">
+          <SectionLabel>{t("home.offersLabel")}</SectionLabel>
+          <div
+            className="-mx-4 mt-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:-mx-6 sm:px-6"
+            role="list"
+          >
+            {shelfOffers.map((offer) => (
+              <div
+                key={offer.id}
+                role="listitem"
+                className="w-[46%] shrink-0 snap-start sm:w-[30%] lg:w-[23%]"
+              >
+                <OfferCard offer={offer} />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <div className="pb-12 sm:pb-16">
+        <CampusSection />
+      </div>
+
+      <section className="mx-auto max-w-5xl px-4 pb-20 text-center sm:px-6 sm:pb-28">
+        <h2 className="text-lg font-bold tracking-[0.06em] text-foreground sm:text-2xl">
+          {t("home.catalogCta.title")}
+        </h2>
+        <p className="mx-auto mt-3 max-w-sm text-sm leading-7 text-muted-foreground">
+          {t("home.catalogCta.text")}
+        </p>
+        <Link
+          to="/perfumes"
+          className="mt-6 inline-flex items-center rounded-full border border-primary/50 px-7 py-3 text-sm font-bold tracking-[0.1em] text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+        >
+          {t("home.catalogCta.cta")}
+        </Link>
       </section>
     </SiteLayout>
+  );
+}
+
+function EmptyState() {
+  const { t } = useI18n();
+  return (
+    <div className="mt-4 rounded-xl border border-dashed border-border px-5 py-10 text-center">
+      <p className="text-sm text-muted-foreground">{t("home.empty")}</p>
+      <Link
+        to="/perfumes"
+        className="mt-3 inline-block text-xs font-semibold tracking-[0.1em] text-primary hover:opacity-80"
+      >
+        {t("home.catalogCta.cta")}
+      </Link>
+    </div>
   );
 }

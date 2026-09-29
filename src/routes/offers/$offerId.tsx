@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Link, createFileRoute, notFound } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/SiteLayout";
 import { ImageGallery } from "@/components/ImageGallery";
@@ -7,7 +7,7 @@ import { OrderForm } from "@/components/OrderForm";
 import { useLocalized } from "@/lib/use-localized";
 import { useI18n } from "@/lib/i18n";
 import { meta } from "@/lib/meta";
-import { useOffers } from "@/lib/data";
+import { useOffers, findOfferByParam, type CatalogOffer } from "@/lib/data";
 
 export const Route = createFileRoute("/offers/$offerId")({
   head: () => ({
@@ -29,60 +29,87 @@ export const Route = createFileRoute("/offers/$offerId")({
   component: OfferDetailsPage,
 });
 
+function OfferLoading() {
+  return (
+    <SiteLayout>
+      <div className="mx-auto max-w-3xl px-6 pt-20 pb-20 text-center">
+        <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
+      </div>
+    </SiteLayout>
+  );
+}
+
+/**
+ * Resolves the route parameter to a Dashboard-managed offer.
+ *
+ * Every state branch is decided here, before any of the view's hooks mount, so
+ * the hook order of the rendered subtree is always stable. The view is keyed by
+ * the offer id, which also guarantees a fresh mount (and a single ViewContent
+ * event) whenever the visitor moves between offers.
+ */
 function OfferDetailsPage() {
   const { offerId } = Route.useParams();
-  const { data: offers = [], isLoading } = useOffers(false);
-  const localize = useLocalized();
+  const { data: offers = [], isPending, isError, refetch, isFetching } = useOffers(false);
   const { t } = useI18n();
 
-  const offer = offers.find((o) => o.id === offerId);
+  const offer = findOfferByParam(offers, offerId);
 
-  if (isLoading && !offer) {
+  if (isError) {
     return (
       <SiteLayout>
-        <div className="mx-auto max-w-3xl px-6 pt-20 pb-20 text-center">
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
+        <div className="mx-auto max-w-xl px-6 py-24 text-center">
+          <h1 className="text-lg font-semibold text-foreground">{t("offerDetails.loadError")}</h1>
+          <p className="mt-2 text-sm leading-7 text-muted-foreground">
+            {t("offerDetails.loadErrorText")}
+          </p>
+          <button
+            type="button"
+            onClick={() => refetch()}
+            disabled={isFetching}
+            className="mt-6 inline-flex items-center justify-center rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+          >
+            {t("offerDetails.retry")}
+          </button>
         </div>
       </SiteLayout>
     );
   }
 
+  if (isPending && !offer) return <OfferLoading />;
   if (!offer) throw notFound();
 
+  return <OfferDetailsView key={offer.id} offer={offer} />;
+}
+
+function OfferDetailsView({ offer }: { offer: CatalogOffer }) {
+  const localize = useLocalized();
+  const { t } = useI18n();
+  const tracked = useRef<string | null>(null);
+
+  const name = localize(offer.name);
+  const description = localize(offer.description);
+  const longDesc = offer.longDescription ? localize(offer.longDescription) : "";
+
   const price =
-    offer.discount?.enabled && offer.discount.newPrice > 0
-      ? offer.discount.newPrice
-      : offer.price;
+    offer.discount?.enabled && offer.discount.newPrice > 0 ? offer.discount.newPrice : offer.price;
   const oldP = offer.discount?.enabled ? offer.discount.oldPrice : offer.oldPrice;
+
+  useEffect(() => {
+    const signature = `${offer.id}|${name}|${price}`;
+    if (tracked.current === signature) return;
+    tracked.current = signature;
+    meta.init();
+    meta.viewContent({
+      contentIds: [offer.id],
+      contentName: name,
+      value: price,
+    });
+  }, [offer.id, name, price]);
 
   function scrollToOrderForm() {
     const el = document.getElementById("order-form-section");
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   }
-
-  const name = localize(offer.name);
-  const description = localize(offer.description);
-  useEffect(() => {
-    if (offer) {
-      meta.viewContent({
-        contentIds: [offer.id],
-        contentName: name,
-        value: price,
-      });
-    }
-  }, [offer?.id]);
-
-  const longDesc = offer.longDescription ? localize(offer.longDescription) : "";
-
-  useEffect(() => {
-    if (offer) {
-      meta.viewContent({
-        contentIds: [offer.id],
-        contentName: localize(offer.name),
-        value: price,
-      });
-    }
-  }, [offer?.id]);
 
   return (
     <SiteLayout>
@@ -100,9 +127,7 @@ function OfferDetailsPage() {
       </section>
 
       <section className="mx-auto max-w-2xl px-6 pb-10 text-center">
-        <h1 className="text-3xl font-bold tracking-[0.1em] text-foreground sm:text-5xl">
-          {name}
-        </h1>
+        <h1 className="text-3xl font-bold tracking-[0.1em] text-foreground sm:text-5xl">{name}</h1>
         <span className="mx-auto mt-6 block h-px w-12 bg-primary/60" aria-hidden="true" />
         <div className="mt-6">
           <PriceTag
@@ -134,7 +159,10 @@ function OfferDetailsPage() {
                 key={i}
                 className="flex items-center gap-3 text-base font-normal text-card-foreground"
               >
-                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary/70" aria-hidden="true" />
+                <span
+                  className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary/70"
+                  aria-hidden="true"
+                />
                 {localize(item)}
               </li>
             ))}
@@ -175,7 +203,10 @@ function OfferDetailsPage() {
         </div>
       </section>
 
-      <section id="order-form-section" className="mx-auto max-w-2xl scroll-mt-20 px-6 pb-28 sm:pb-32">
+      <section
+        id="order-form-section"
+        className="mx-auto max-w-2xl scroll-mt-20 px-6 pb-28 sm:pb-32"
+      >
         <h2 className="mb-8 text-center text-base font-bold tracking-[0.14em] text-muted-foreground">
           {t("offerDetails.orderForm")}
         </h2>

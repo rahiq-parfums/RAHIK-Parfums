@@ -20,6 +20,8 @@ export async function sendOrderEmail(order: OrderData): Promise<EmailResult> {
     wilaya: order.wilaya,
     commune: order.commune,
     deliveryType: order.deliveryType,
+    deliveryMode: order.deliveryMode ?? "standard",
+    residence: order.residence,
     quantity: order.quantity,
     unitPrice: order.unitPrice,
     deliveryPrice: order.deliveryPrice,
@@ -41,7 +43,9 @@ export async function sendOrderEmail(order: OrderData): Promise<EmailResult> {
       const result = data as { success: boolean; message?: string };
       return {
         success: result.success,
-        message: result.message ?? (result.success ? "Order sent successfully." : "Failed to send order email."),
+        message:
+          result.message ??
+          (result.success ? "Order sent successfully." : "Failed to send order email."),
       };
     }
 
