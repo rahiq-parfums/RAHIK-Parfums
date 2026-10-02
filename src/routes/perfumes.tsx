@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useMatchRoute } from "@tanstack/react-router";
 import { SiteLayout, PageIntro } from "@/components/SiteLayout";
 import { PerfumeCard } from "@/components/PerfumeCard";
 import { useI18n } from "@/lib/i18n";
@@ -33,10 +33,18 @@ export const Route = createFileRoute("/perfumes")({
 function PerfumesPage() {
   const { t } = useI18n();
   const { campus } = Route.useSearch();
+  const matchRoute = useMatchRoute();
+  const isDetail = matchRoute({ to: "/perfumes/$perfumeId" });
 
   // Same hook as Home: one product source, one price source, one card.
   const { items, isPending } = useCatalogue(true);
   const isCampus = isCampusContext(campus);
+
+  // `/perfumes/$perfumeId` is a child of this route, so the individual perfume
+  // order view is rendered in its place rather than below the catalogue.
+  if (isDetail) {
+    return <Outlet />;
+  }
 
   return (
     <SiteLayout>
@@ -63,12 +71,7 @@ function PerfumesPage() {
                 campus={isCampus}
                 price={
                   item.offer && item.price != null
-                    ? { price: item.price, oldPrice: item.oldPrice, offerId: item.offer.id }
-                    : undefined
-                }
-                collection={
-                  item.collection
-                    ? { name: item.collection.name, offerId: item.collection.id }
+                    ? { price: item.price, oldPrice: item.oldPrice }
                     : undefined
                 }
               />

@@ -354,7 +354,7 @@ export function useCatalogue(visibleOnly = true) {
 }
 
 /** Normalises a slug or a URL segment so "Men Collection" and "men-collection" match. */
-function offerKey(value: string): string {
+function slugKey(value: string): string {
   return value
     .trim()
     .toLowerCase()
@@ -383,8 +383,55 @@ export function findOfferByParam(
   const raw = safeDecode(param);
   const exact = offers.find((o) => o.id === raw);
   if (exact) return exact;
-  const target = offerKey(raw);
-  return offers.find((o) => offerKey(o.id) === target);
+  const target = slugKey(raw);
+  return offers.find((o) => slugKey(o.id) === target);
+}
+
+/**
+ * Resolves the `/perfumes/$perfumeId` param against the Dashboard-managed
+ * perfumes, accepting either the public slug or the `perfumes.id` UUID.
+ *
+ * Like `findOfferByParam` it normalises the segment and falls back to the UUID,
+ * so a direct cold load, a shared link and a slug that differs only in case or
+ * separators all reach the same perfume.
+ */
+export function findPerfumeByParam(
+  perfumes: Perfume[],
+  param: string | undefined,
+): Perfume | undefined {
+  if (!param) return undefined;
+  const raw = safeDecode(param);
+  const exact = perfumes.find((p) => p.id === raw || p.dbId === raw);
+  if (exact) return exact;
+  const target = slugKey(raw);
+  return perfumes.find((p) => slugKey(p.id) === target);
+}
+
+/**
+ * The offer that sells this perfume **on its own**, which is the only thing that
+ * may stand behind an individual perfume price or an individual order form.
+ *
+ * A perfume that only appears inside a multi-perfume offer is deliberately
+ * excluded: that offer's price buys the whole set, so it is not this perfume's
+ * price and ordering it would silently add perfumes the customer never chose.
+ */
+export function individualOfferForPerfume(
+  offers: CatalogOffer[],
+  perfume: Perfume,
+): CatalogOffer | undefined {
+  return findOfferForPerfume(indexOffersByPerfume(offers, isIndividualOffer), perfume);
+}
+
+/**
+ * The collection this perfume belongs to, when it is only sold as part of one.
+ * Used to name the set without ever presenting it as the perfume's own price.
+ */
+export function collectionForPerfume(
+  offers: CatalogOffer[],
+  perfume: Perfume,
+): CatalogOffer | undefined {
+  const index = indexOffersByPerfume(offers, (offer) => !isIndividualOffer(offer));
+  return findOfferForPerfume(index, perfume);
 }
 
 // ─── Contact Settings ─────────────────────────────────────────────────────────

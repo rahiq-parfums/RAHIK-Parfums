@@ -66,6 +66,14 @@ const translations: Record<Language, Dict> = {
     "product.order": "اطلب الآن",
     "perfumes.placeholder": "وصف مختصر للعطر يُضاف لاحقًا.",
 
+    "perfumeDetails.back": "العودة إلى العطور",
+    "perfumeDetails.orderForm": "نموذج الطلب",
+    "perfumeDetails.fragrance": "معلومات الاستخدام",
+    "perfumeDetails.notSoldAlone": "غير متوفر للطلب الفردي",
+    "perfumeDetails.notSoldAloneText":
+      "هذا العطر غير متوفر للطلب منفردًا حاليًا، ويمكن طلبه ضمن المجموعة التالية:",
+    "perfumeDetails.orderCollection": "اطلب ضمن المجموعة",
+
     "badge.original": "أصلي",
     "badge.ordinary": "عادي",
     "badge.fois2": "مرّتين",
@@ -314,6 +322,14 @@ const translations: Record<Language, Dict> = {
     "perfumes.inCollection": "Part of a collection",
     "product.order": "Order now",
     "perfumes.placeholder": "A short fragrance description will be added later.",
+
+    "perfumeDetails.back": "Back to perfumes",
+    "perfumeDetails.orderForm": "Order form",
+    "perfumeDetails.fragrance": "Fragrance information",
+    "perfumeDetails.notSoldAlone": "Not available on its own",
+    "perfumeDetails.notSoldAloneText":
+      "This perfume is not currently sold on its own. You can order it within the following collection:",
+    "perfumeDetails.orderCollection": "Order in the collection",
 
     "badge.original": "Original",
     "badge.ordinary": "Ordinary",

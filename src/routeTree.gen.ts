@@ -27,6 +27,7 @@ import { Route as AdminOffersRouteImport } from './routes/admin/offers'
 import { Route as AdminProductsRouteImport } from './routes/admin/products'
 import { Route as AdminSettingsRouteImport } from './routes/admin/settings'
 import { Route as OffersOfferIdRouteImport } from './routes/offers/$offerId'
+import { Route as PerfumesPerfumeIdRouteImport } from './routes/perfumes/$perfumeId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -118,6 +119,11 @@ const OffersOfferIdRoute = OffersOfferIdRouteImport.update({
   path: '/$offerId',
   getParentRoute: () => OffersRoute,
 } as any)
+const PerfumesPerfumeIdRoute = PerfumesPerfumeIdRouteImport.update({
+  id: '/$perfumeId',
+  path: '/$perfumeId',
+  getParentRoute: () => PerfumesRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -126,7 +132,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/offers': typeof OffersRouteWithChildren
   '/order-success': typeof OrderSuccessRoute
-  '/perfumes': typeof PerfumesRoute
+  '/perfumes': typeof PerfumesRouteWithChildren
   '/admin/algeria': typeof AdminAlgeriaRoute
   '/admin/contacts': typeof AdminContactsRoute
   '/admin/delivery': typeof AdminDeliveryRoute
@@ -137,6 +143,7 @@ export interface FileRoutesByFullPath {
   '/admin/products': typeof AdminProductsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/offers/$offerId': typeof OffersOfferIdRoute
+  '/perfumes/$perfumeId': typeof PerfumesPerfumeIdRoute
   '/admin/': typeof AdminIndexRoute
 }
 export interface FileRoutesByTo {
@@ -146,7 +153,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/offers': typeof OffersRouteWithChildren
   '/order-success': typeof OrderSuccessRoute
-  '/perfumes': typeof PerfumesRoute
+  '/perfumes': typeof PerfumesRouteWithChildren
   '/admin/algeria': typeof AdminAlgeriaRoute
   '/admin/contacts': typeof AdminContactsRoute
   '/admin/delivery': typeof AdminDeliveryRoute
@@ -157,6 +164,7 @@ export interface FileRoutesByTo {
   '/admin/products': typeof AdminProductsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/offers/$offerId': typeof OffersOfferIdRoute
+  '/perfumes/$perfumeId': typeof PerfumesPerfumeIdRoute
   '/admin': typeof AdminIndexRoute
 }
 export interface FileRoutesById {
@@ -167,7 +175,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/offers': typeof OffersRouteWithChildren
   '/order-success': typeof OrderSuccessRoute
-  '/perfumes': typeof PerfumesRoute
+  '/perfumes': typeof PerfumesRouteWithChildren
   '/admin/algeria': typeof AdminAlgeriaRoute
   '/admin/contacts': typeof AdminContactsRoute
   '/admin/delivery': typeof AdminDeliveryRoute
@@ -178,6 +186,7 @@ export interface FileRoutesById {
   '/admin/products': typeof AdminProductsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/offers/$offerId': typeof OffersOfferIdRoute
+  '/perfumes/$perfumeId': typeof PerfumesPerfumeIdRoute
   '/admin/': typeof AdminIndexRoute
 }
 export interface FileRouteTypes {
@@ -200,6 +209,7 @@ export interface FileRouteTypes {
     | '/admin/products'
     | '/admin/settings'
     | '/offers/$offerId'
+    | '/perfumes/$perfumeId'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -220,6 +230,7 @@ export interface FileRouteTypes {
     | '/admin/products'
     | '/admin/settings'
     | '/offers/$offerId'
+    | '/perfumes/$perfumeId'
     | '/admin'
   id:
     | '__root__'
@@ -240,6 +251,7 @@ export interface FileRouteTypes {
     | '/admin/products'
     | '/admin/settings'
     | '/offers/$offerId'
+    | '/perfumes/$perfumeId'
     | '/admin/'
   fileRoutesById: FileRoutesById
 }
@@ -250,7 +262,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   OffersRoute: typeof OffersRouteWithChildren
   OrderSuccessRoute: typeof OrderSuccessRoute
-  PerfumesRoute: typeof PerfumesRoute
+  PerfumesRoute: typeof PerfumesRouteWithChildren
   AdminAlgeriaRoute: typeof AdminAlgeriaRoute
   AdminContactsRoute: typeof AdminContactsRoute
   AdminDeliveryRoute: typeof AdminDeliveryRoute
@@ -391,6 +403,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OffersOfferIdRouteImport
       parentRoute: typeof OffersRoute
     }
+    '/perfumes/$perfumeId': {
+      id: '/perfumes/$perfumeId'
+      path: '/$perfumeId'
+      fullPath: '/perfumes/$perfumeId'
+      preLoaderRoute: typeof PerfumesPerfumeIdRouteImport
+      parentRoute: typeof PerfumesRoute
+    }
   }
 }
 
@@ -405,6 +424,18 @@ const OffersRouteChildren: OffersRouteChildren = {
 const OffersRouteWithChildren =
   OffersRoute._addFileChildren(OffersRouteChildren)
 
+interface PerfumesRouteChildren {
+  PerfumesPerfumeIdRoute: typeof PerfumesPerfumeIdRoute
+}
+
+const PerfumesRouteChildren: PerfumesRouteChildren = {
+  PerfumesPerfumeIdRoute: PerfumesPerfumeIdRoute,
+}
+
+const PerfumesRouteWithChildren = PerfumesRoute._addFileChildren(
+  PerfumesRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ContactRoute: ContactRoute,
@@ -412,7 +443,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   OffersRoute: OffersRouteWithChildren,
   OrderSuccessRoute: OrderSuccessRoute,
-  PerfumesRoute: PerfumesRoute,
+  PerfumesRoute: PerfumesRouteWithChildren,
   AdminAlgeriaRoute: AdminAlgeriaRoute,
   AdminContactsRoute: AdminContactsRoute,
   AdminDeliveryRoute: AdminDeliveryRoute,

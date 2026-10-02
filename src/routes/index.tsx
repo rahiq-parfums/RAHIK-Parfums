@@ -115,12 +115,7 @@ function Index() {
                   campus={isCampus}
                   price={
                     item.offer && item.price != null
-                      ? { price: item.price, oldPrice: item.oldPrice, offerId: item.offer.id }
-                      : undefined
-                  }
-                  collection={
-                    item.collection
-                      ? { name: item.collection.name, offerId: item.collection.id }
+                      ? { price: item.price, oldPrice: item.oldPrice }
                       : undefined
                   }
                 />
