@@ -3,10 +3,10 @@ import { SiteLayout, PageIntro } from "@/components/SiteLayout";
 import { PerfumeCard } from "@/components/PerfumeCard";
 import { useI18n } from "@/lib/i18n";
 import { useCatalogue } from "@/lib/data";
-import { CAMPUS_PARAM_VALUE, isCampusContext } from "@/lib/campus";
+import { CAMPUS_PARAM_VALUE, isCampusContext, type CampusSearch } from "@/lib/campus";
 
 export const Route = createFileRoute("/perfumes")({
-  validateSearch: (search: Record<string, unknown>): { campus?: string } => {
+  validateSearch: (search: Record<string, unknown>): CampusSearch => {
     // RAHIQ Campus hands its context to the catalogue, which passes it on to
     // the order page through the same param.
     return isCampusContext(search.campus) ? { campus: CAMPUS_PARAM_VALUE } : {};
@@ -40,13 +40,10 @@ function PerfumesPage() {
 
   return (
     <SiteLayout>
-      <PageIntro
-        title={isCampus ? t("campus.ordersTitle") : t("perfumes.title")}
-        text={isCampus ? t("campus.ordersText") : t("perfumes.intro")}
-      />
+      <PageIntro title={t("perfumes.title")} text={t("perfumes.intro")} />
 
       {isCampus && (
-        <p className="mx-auto mb-6 flex max-w-md items-center justify-center gap-2 rounded-full border border-primary/50 bg-primary/10 px-4 py-2 text-center text-xs font-semibold text-primary">
+        <p className="mx-auto mb-6 flex w-fit items-center gap-2 rounded-full border border-primary/50 bg-primary/10 px-4 py-2 text-xs font-semibold text-primary">
           <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" />
           {t("campus.active")}
         </p>
@@ -67,6 +64,11 @@ function PerfumesPage() {
                 price={
                   item.offer && item.price != null
                     ? { price: item.price, oldPrice: item.oldPrice, offerId: item.offer.id }
+                    : undefined
+                }
+                collection={
+                  item.collection
+                    ? { name: item.collection.name, offerId: item.collection.id }
                     : undefined
                 }
               />

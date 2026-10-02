@@ -34,18 +34,34 @@ export const CAMPUS_DELIVERY_PRICE = 50;
 export const CAMPUS_PARAM = "campus";
 
 /** Value of {@link CAMPUS_PARAM} that activates the Campus context. */
-export const CAMPUS_PARAM_VALUE = "1";
+export const CAMPUS_PARAM_VALUE = 1;
+
+/** The validated shape of the Campus search param on any public route. */
+export type CampusSearch = { campus?: number };
 
 /**
  * Campus context is carried in the URL so it survives Home → catalogue →
  * checkout navigation without any global state. A missing or falsy value means
  * a normal order.
+ *
+ * Every form of the flag is accepted: the router parses `?campus=1` into the
+ * number `1`, and a hand-written `?campus=true` should mean the same thing.
  */
 export function isCampusContext(value: unknown): boolean {
-  return value === CAMPUS_PARAM_VALUE || value === true;
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value === CAMPUS_PARAM_VALUE;
+  if (typeof value !== "string") return false;
+  const normalized = value.trim().toLowerCase();
+  return normalized === String(CAMPUS_PARAM_VALUE) || normalized === "true";
 }
 
-/** Builds the `search` object needed to keep the Campus context alive. */
-export function campusSearch(campus: boolean): { campus?: string } {
-  return campus ? { [CAMPUS_PARAM]: CAMPUS_PARAM_VALUE } : {};
+/**
+ * Builds the `search` object needed to keep the Campus context alive.
+ *
+ * The value is numeric on purpose: the router JSON-encodes search strings that
+ * happen to be valid JSON, which would turn the readable `?campus=1` into
+ * `?campus=%221%22`. A number serialises to exactly `?campus=1`.
+ */
+export function campusSearch(campus: boolean): CampusSearch {
+  return campus ? { campus: CAMPUS_PARAM_VALUE } : {};
 }

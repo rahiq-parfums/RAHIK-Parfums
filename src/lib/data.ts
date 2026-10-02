@@ -235,22 +235,42 @@ export function referenceOfferPrice(offer: CatalogOffer): number | undefined {
 }
 
 /**
- * Maps a perfume to the first offer that contains it, so a perfume card can show
- * the real Dashboard price instead of an invented one. Perfumes that are not part
- * of any offer simply have no entry.
+ * Maps a perfume to the first acceptable offer that contains it, so a perfume
+ * card can show the real Dashboard price instead of an invented one. Perfumes
+ * that are not part of any offer simply have no entry.
+ *
+ * The `accept` predicate lets a caller build a second, narrower index — the
+ * public catalogue uses it to separate a perfume's *own* price from the price of
+ * a collection it merely belongs to.
  *
  * The lookup key accepts either form because `offer_perfumes.perfume_id` stores
  * the `perfumes.id` UUID while a `Perfume` is addressed publicly by its slug.
  */
-export function indexOffersByPerfume(offers: CatalogOffer[]): Map<string, CatalogOffer> {
+export function indexOffersByPerfume(
+  offers: CatalogOffer[],
+  accept: (offer: CatalogOffer) => boolean = () => true,
+): Map<string, CatalogOffer> {
   const index = new Map<string, CatalogOffer>();
   for (const offer of offers) {
+    if (!accept(offer)) continue;
     for (const entry of offer.perfumes) {
       if (!entry.perfumeId) continue;
       if (!index.has(entry.perfumeId)) index.set(entry.perfumeId, offer);
     }
   }
   return index;
+}
+
+/**
+ * Whether an offer is a product in its own right rather than a bundle.
+ *
+ * An offer that lists several perfumes sells *the set*: its price buys all of
+ * them together, so it can never be presented as the price of one perfume. An
+ * offer that lists one perfume — or none, because it is simply a product that
+ * happens to be modelled as an offer — is independently purchasable.
+ */
+export function isIndividualOffer(offer: CatalogOffer): boolean {
+  return offer.perfumes.length <= 1;
 }
 
 /** Resolves a perfume against the offer index using its UUID, then its slug. */
@@ -265,11 +285,21 @@ export function findOfferForPerfume(
 
 export type CataloguePerfume = {
   perfume: Perfume;
-  /** The real offer that gives this perfume a price and an orderable unit. */
+  /**
+   * The orderable unit for this perfume, set only when the Dashboard sells the
+   * perfume on its own (see `isIndividualOffer`). This is the only thing that
+   * may justify a price or an order button on the perfume card.
+   */
   offer?: CatalogOffer;
   price?: number;
   oldPrice?: number;
   isDiscounted: boolean;
+  /**
+   * The multi-perfume offer this perfume belongs to, when there is one. Its
+   * price covers the whole set, so the card only names the collection instead of
+   * pretending the perfume can be bought on its own.
+   */
+  collection?: CatalogOffer;
 };
 
 /**
@@ -280,9 +310,11 @@ export type CataloguePerfume = {
  * can never drift apart. A product added or edited in the Dashboard appears on
  * both pages automatically.
  *
- * Prices are never fabricated: a perfume only gets a price when the Dashboard
- * links it to an offer, because offers are the only orderable, priced entity in
- * the existing data model.
+ * Prices are never fabricated, and an offer price is never stretched across a
+ * bundle: a perfume is given a price and an order button only when the Dashboard
+ * links it to an offer that sells it alone. When it merely belongs to a
+ * collection, the collection is the purchasable product and the perfume card
+ * names it instead of showing a price that would buy the whole set.
  */
 const EMPTY_PERFUMES: Perfume[] = [];
 const EMPTY_OFFERS: CatalogOffer[] = [];
@@ -294,20 +326,23 @@ export function useCatalogue(visibleOnly = true) {
   const perfumes = perfumesQuery.data ?? EMPTY_PERFUMES;
   const offers = offersQuery.data ?? EMPTY_OFFERS;
   const offerIndex = useMemo(() => indexOffersByPerfume(offers), [offers]);
+  const individualIndex = useMemo(() => indexOffersByPerfume(offers, isIndividualOffer), [offers]);
 
   const items = useMemo<CataloguePerfume[]>(
     () =>
       perfumes.map((perfume) => {
-        const offer = findOfferForPerfume(offerIndex, perfume);
+        const individual = findOfferForPerfume(individualIndex, perfume);
+        const linked = individual ?? findOfferForPerfume(offerIndex, perfume);
         return {
           perfume,
-          offer,
-          price: offer ? effectiveOfferPrice(offer) : undefined,
-          oldPrice: offer ? referenceOfferPrice(offer) : undefined,
-          isDiscounted: Boolean(offer?.discount?.enabled),
+          offer: individual,
+          price: individual ? effectiveOfferPrice(individual) : undefined,
+          oldPrice: individual ? referenceOfferPrice(individual) : undefined,
+          isDiscounted: Boolean(linked?.discount?.enabled),
+          collection: individual ? undefined : linked,
         };
       }),
-    [perfumes, offerIndex],
+    [perfumes, offerIndex, individualIndex],
   );
 
   return {

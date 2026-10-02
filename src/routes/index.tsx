@@ -1,10 +1,9 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { BrandLogo, BrandName } from "@/components/BrandLogo";
 import { SiteLayout } from "@/components/SiteLayout";
 import { OfferCard } from "@/components/OfferCard";
 import { PerfumeCard } from "@/components/PerfumeCard";
-import { CampusSection } from "@/components/CampusSection";
+import { CampusHero } from "@/components/CampusHero";
 import {
   HomeFilterBar,
   NO_FILTERS,
@@ -15,8 +14,14 @@ import {
 } from "@/components/HomeFilters";
 import { useI18n } from "@/lib/i18n";
 import { useCatalogue } from "@/lib/data";
+import { CAMPUS_PARAM_VALUE, isCampusContext, type CampusSearch } from "@/lib/campus";
 
 export const Route = createFileRoute("/")({
+  validateSearch: (search: Record<string, unknown>): CampusSearch => {
+    // Home carries the Campus context as well, so activating it from the hero is
+    // remembered on refresh and travels on to the catalogue and the order page.
+    return isCampusContext(search.campus) ? { campus: CAMPUS_PARAM_VALUE } : {};
+  },
   head: () => ({
     meta: [
       { title: "RAHIQ Parfums | رحيق — Luxury Algerian Perfume House" },
@@ -50,6 +55,8 @@ function SectionLabel({ children }: { children: string }) {
 
 function Index() {
   const { t } = useI18n();
+  const { campus } = Route.useSearch();
+  const isCampus = isCampusContext(campus);
 
   // No filter is active on arrival: the customer sees the whole catalogue and
   // chooses to narrow it. Nothing is ever auto-selected or auto-promoted.
@@ -63,90 +70,88 @@ function Index() {
   const visibleItems = useMemo(
     () =>
       items.filter((item) =>
-        matchesFilters(
-          { gender: item.perfume.gender, isDiscounted: item.isDiscounted },
-          filters,
-        ),
+        matchesFilters({ gender: item.perfume.gender, isDiscounted: item.isDiscounted }, filters),
       ),
     [items, filters],
   );
 
-  // The offers shelf is Home content, not filter content: it stays present
-  // whatever the customer has selected.
-  const shelfOffers = isFiltering ? [] : offers;
-
   return (
-    <SiteLayout revealLogoOnScroll>
-      <section className="mx-auto max-w-5xl px-4 pt-8 pb-6 text-center sm:px-6 sm:pt-12">
-        <BrandLogo className="fade-in-up mx-auto h-16 w-auto sm:h-24" />
-        <div className="mt-4">
-          <BrandName className="text-sm font-bold sm:text-base" />
-        </div>
-        <span className="mx-auto mt-5 block h-px w-10 bg-primary/60" aria-hidden="true" />
-        <p className="mx-auto mt-5 max-w-md text-sm leading-7 text-muted-foreground sm:text-base">
-          {t("home.intro")}
-        </p>
-      </section>
+    <SiteLayout>
+      {/* The Campus photograph is the first thing on the page. */}
+      <CampusHero active={isCampus} />
 
-      <section className="mx-auto max-w-5xl px-4 pb-12 sm:px-6 sm:pb-16">
-        <HomeFilterBar
-          filters={filters}
-          onToggle={(id) => setFilters((current) => toggleFilter(current, id))}
-          resultCount={visibleItems.length}
-          isPending={isPending}
-        />
-
-        <div className="mt-5">
-          <SectionLabel>
-            {isFiltering ? t("home.filteredLabel") : t("home.catalogueLabel")}
-          </SectionLabel>
-        </div>
-
-        {isPending ? (
-          <div className="flex justify-center py-16">
-            <div className="h-7 w-7 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
-          </div>
-        ) : visibleItems.length > 0 ? (
-          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
-            {visibleItems.map((item) => (
-              <PerfumeCard
-                key={item.perfume.id}
-                perfume={item.perfume}
-                price={
-                  item.offer && item.price != null
-                    ? { price: item.price, oldPrice: item.oldPrice, offerId: item.offer.id }
-                    : undefined
-                }
-              />
-            ))}
-          </div>
-        ) : (
-          <EmptyState />
-        )}
-      </section>
-
-      {shelfOffers.length > 0 && (
-        <section className="mx-auto max-w-5xl px-4 pb-12 sm:px-6 sm:pb-16">
-          <SectionLabel>{t("home.offersLabel")}</SectionLabel>
-          <div
-            className="-mx-4 mt-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:-mx-6 sm:px-6"
-            role="list"
-          >
-            {shelfOffers.map((offer) => (
-              <div
-                key={offer.id}
-                role="listitem"
-                className="w-[46%] shrink-0 snap-start sm:w-[30%] lg:w-[23%]"
-              >
-                <OfferCard offer={offer} />
-              </div>
-            ))}
-          </div>
+      <div className="bg-background">
+        <section className="mx-auto max-w-5xl px-4 pt-10 pb-8 text-center sm:px-6 sm:pt-14">
+          <span className="mx-auto block h-px w-10 bg-primary/60" aria-hidden="true" />
+          <p className="mx-auto mt-5 max-w-md text-sm leading-7 text-muted-foreground">
+            {t("home.intro")}
+          </p>
         </section>
-      )}
 
-      <div className="pb-12 sm:pb-16">
-        <CampusSection />
+        <section className="mx-auto max-w-5xl px-4 pb-12 sm:px-6 sm:pb-16">
+          <HomeFilterBar
+            filters={filters}
+            onToggle={(id) => setFilters((current) => toggleFilter(current, id))}
+            resultCount={visibleItems.length}
+            isPending={isPending}
+          />
+
+          <div className="mt-5">
+            <SectionLabel>
+              {isFiltering ? t("home.filteredLabel") : t("home.catalogueLabel")}
+            </SectionLabel>
+          </div>
+
+          {isPending ? (
+            <div className="flex justify-center py-16">
+              <div className="h-7 w-7 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
+            </div>
+          ) : visibleItems.length > 0 ? (
+            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
+              {visibleItems.map((item) => (
+                <PerfumeCard
+                  key={item.perfume.id}
+                  perfume={item.perfume}
+                  campus={isCampus}
+                  price={
+                    item.offer && item.price != null
+                      ? { price: item.price, oldPrice: item.oldPrice, offerId: item.offer.id }
+                      : undefined
+                  }
+                  collection={
+                    item.collection
+                      ? { name: item.collection.name, offerId: item.collection.id }
+                      : undefined
+                  }
+                />
+              ))}
+            </div>
+          ) : (
+            <EmptyState />
+          )}
+        </section>
+
+        {/* The offers shelf is Home content, not filter content: it stays
+            present whatever the customer has selected. */}
+        {offers.length > 0 && (
+          <section className="mx-auto max-w-5xl px-4 pb-12 sm:px-6 sm:pb-16">
+            <SectionLabel>{t("home.offersLabel")}</SectionLabel>
+            <div
+              className="-mx-4 mt-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:-mx-6 sm:px-6"
+              role="list"
+            >
+              {offers.map((offer) => (
+                <div
+                  key={offer.id}
+                  role="listitem"
+                  className="w-[46%] shrink-0 snap-start sm:w-[30%] lg:w-[23%]"
+                >
+                  <OfferCard offer={offer} campus={isCampus} />
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
     </SiteLayout>
   );

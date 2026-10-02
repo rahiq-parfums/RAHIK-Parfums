@@ -53,26 +53,17 @@ const translations: Record<Language, Dict> = {
     "home.card.discounts.cta": "اطلب",
     "home.card.action": "اكتشف",
 
-    "campus.title": "عطورك إلى الإقامة",
-    "campus.text":
-      "العطور تصل إلى سكنك الجامعي مباشرة. اطلب من عروض الدار واختر إقامتك، ويتكفّل رحيق بالباقي.",
-    "campus.point1": "تسليم داخل الإقامة الجامعية",
-    "campus.point2": "بدون تنقّل إضافي ولا انتظار",
-    "campus.point3": "نفس الأسعار المطبّقة على المتجر",
-    "campus.cta": "اطلب الآن",
+    "campus.name": "الإقامة الجامعية",
     "campus.imageAlt": "طلبة في الإقامة الجامعية",
+    "campus.activate": "تفعيل",
     "campus.active": "مفعّل",
-    "campus.student": "للطلبة",
-    "campus.residences": "إقامات",
-    "campus.ordersTitle": "عطور الإقامة الجامعية",
-    "campus.ordersText":
-      "اختر عطرك وسنوصّله إلى إقامتك الجامعية مباشرة. التوصيل يتم إلى داخل الإقامة طوال الطلب.",
 
     "perfumes.title": "العطور",
     "perfumes.intro": "تشكيلة مختارة من عطور الدار، تُقدّم للاكتشاف والتأمل.",
     "perfumes.item": "عطر",
     "perfumes.inStock": "متوفر في الدار",
-    "perfumes.orderNow": "اطلب الآن",
+    "perfumes.inCollection": "ضمن مجموعة",
+    "product.order": "اطلب الآن",
     "perfumes.placeholder": "وصف مختصر للعطر يُضاف لاحقًا.",
 
     "badge.original": "أصلي",
@@ -100,7 +91,6 @@ const translations: Record<Language, Dict> = {
     "offers.item": "عرض",
     "offers.placeholder": "وصف مختصر للعرض يُضاف لاحقًا.",
     "offers.viewDetails": "عرض التفاصيل",
-    "offers.cta": "اطلب",
 
     "discounts.title": "التخفيضات",
     "discounts.intro": "اختيارات مميزة بأسعار خاصة لمدة محدودة.",
@@ -311,27 +301,18 @@ const translations: Record<Language, Dict> = {
     "home.card.discounts.cta": "Order",
     "home.card.action": "Discover",
 
-    "campus.title": "Your fragrance, to your residence",
-    "campus.text":
-      "Fragrances are delivered straight to your university residence. Order from the house offers, pick your residence, and RAHIQ handles the rest.",
-    "campus.point1": "Delivered inside the university residence",
-    "campus.point2": "No extra trip and no waiting",
-    "campus.point3": "The same prices as the store",
-    "campus.cta": "Order now",
+    "campus.name": "Campus delivery",
     "campus.imageAlt": "Students at the university residence",
+    "campus.activate": "Activate",
     "campus.active": "Active",
-    "campus.student": "For students",
-    "campus.residences": "residences",
-    "campus.ordersTitle": "University Residence fragrances",
-    "campus.ordersText":
-      "Choose your fragrance and we deliver it straight to your residence, inside the residence itself, for the whole order.",
 
     "perfumes.title": "Perfumes",
     "perfumes.intro":
       "A curated selection of the house fragrances, presented for discovery and contemplation.",
     "perfumes.item": "Perfume",
     "perfumes.inStock": "Available at the house",
-    "perfumes.orderNow": "Order now",
+    "perfumes.inCollection": "Part of a collection",
+    "product.order": "Order now",
     "perfumes.placeholder": "A short fragrance description will be added later.",
 
     "badge.original": "Original",
@@ -359,7 +340,6 @@ const translations: Record<Language, Dict> = {
     "offers.item": "Offer",
     "offers.placeholder": "A short offer description will be added later.",
     "offers.viewDetails": "View details",
-    "offers.cta": "Order",
 
     "discounts.title": "Discounts",
     "discounts.intro": "Selected pieces at special prices for a limited time.",

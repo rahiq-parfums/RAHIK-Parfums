@@ -3,6 +3,7 @@ import { useLocalized } from "@/lib/use-localized";
 import { useI18n } from "@/lib/i18n";
 import { formatPrice } from "@/lib/currency";
 import { PerfumeStats } from "@/components/PerfumeStats";
+import { productCard } from "@/components/product-card";
 import { campusSearch } from "@/lib/campus";
 import { cn } from "@/lib/utils";
 import type { Perfume } from "@/lib/catalog";
@@ -13,17 +14,21 @@ type PerfumeCardPrice = {
   offerId: string;
 };
 
+type PerfumeCardCollection = {
+  name: { ar: string; en: string };
+  offerId: string;
+};
+
 /**
- * A compact, mobile-first perfume card.
+ * A compact, mobile-first perfume card that shares its visual language with the
+ * offer card: image → name → metadata → real price → one order action.
  *
- * Hierarchy: image → name → compact community metadata → price → order action.
- * The image stays the dominant element; everything below it is compressed into
- * micro-typography and hairline meters so roughly two cards fit in one phone
- * viewport.
- *
- * `price` is the real Dashboard price, taken from the offer this perfume
- * belongs to. The card never invents a price: a perfume that is not part of any
- * offer has no purchasable unit, so it is rendered as catalogue-only.
+ * Ordering never over-promises. A perfume is shown as purchasable only when the
+ * Dashboard sells it on its own; in that case `price` carries that offer's real
+ * price and the button opens that order flow. When the perfume merely belongs to
+ * a collection, the collection is the product that can be bought, so the card
+ * shows no price and no order button — it names the collection and links to it.
+ * A perfume with neither is simply "available at the house".
  *
  * `campus` carries the RAHIQ Campus context into the order page so a customer
  * who entered through Campus does not have to select Campus a second time.
@@ -31,11 +36,13 @@ type PerfumeCardPrice = {
 export function PerfumeCard({
   perfume,
   price,
+  collection,
   campus = false,
   className,
 }: {
   perfume: Perfume;
   price?: PerfumeCardPrice;
+  collection?: PerfumeCardCollection;
   campus?: boolean;
   className?: string;
 }) {
@@ -45,44 +52,37 @@ export function PerfumeCard({
 
   const versions = perfume.versions.slice(0, 2);
   const extraVersions = perfume.versions.length - versions.length;
+  const isReduced = price != null && price.oldPrice != null && price.oldPrice > price.price;
 
   return (
-    <article
-      className={cn(
-        "group flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-colors hover:border-primary/45",
-        campus && "border-primary/50",
-        className,
-      )}
-    >
-      <div className="relative aspect-square overflow-hidden bg-muted">
+    <article className={cn(productCard.root, campus && "border-primary/50", className)}>
+      <div className={productCard.media}>
         <img
           src={perfume.image}
           alt={name}
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          className={productCard.image}
           loading="lazy"
           decoding="async"
         />
         <span
-          className="absolute start-1.5 top-1.5 rounded-full bg-background/90 px-1.5 py-0.5 text-[0.6rem] leading-none font-bold tabular-nums text-foreground backdrop-blur-sm"
+          className={cn(productCard.badge, productCard.badgeQuiet, productCard.badgeStart)}
           title={t("rating.community")}
         >
           {perfume.ratings.community}%
         </span>
-        {price && price.oldPrice != null && price.oldPrice > price.price && (
-          <span className="absolute bottom-0 end-0 bg-primary px-1.5 py-0.5 text-[0.6rem] leading-none font-bold text-primary-foreground">
-            -{Math.round(((price.oldPrice - price.price) / price.oldPrice) * 100)}%
+        {isReduced && (
+          <span className={cn(productCard.badge, productCard.badgeSolid, productCard.badgeEnd)}>
+            -{Math.round(((price.oldPrice! - price.price) / price.oldPrice!) * 100)}%
           </span>
         )}
       </div>
 
-      <div className="flex flex-1 flex-col gap-1.5 p-2.5">
-        <h3 className="truncate text-[0.8rem] leading-tight font-semibold text-card-foreground">
-          {name}
-        </h3>
+      <div className={productCard.body}>
+        <h3 className={cn(productCard.title, "line-clamp-2")}>{name}</h3>
 
         {(versions.length > 0 || extraVersions > 0) && (
           <p
-            className="truncate text-[0.55rem] leading-none tracking-[0.04em] text-muted-foreground"
+            className={cn(productCard.note, "mt-1")}
             title={perfume.versions.map((v) => (lang === "ar" ? v.ar : v.en)).join(" · ")}
           >
             {versions.map((v) => (lang === "ar" ? v.ar : v.en)).join(" · ")}
@@ -90,39 +90,40 @@ export function PerfumeCard({
           </p>
         )}
 
-        <PerfumeStats ratings={perfume.ratings} />
+        <div className="mt-2">
+          <PerfumeStats ratings={perfume.ratings} />
+        </div>
 
-        <div className="mt-auto flex items-center justify-between gap-1.5 pt-0.5">
+        <div className={productCard.priceRow}>
           {price ? (
-            <span className="flex min-w-0 items-baseline gap-1">
-              <span className="truncate text-[0.8rem] font-bold tabular-nums text-primary">
-                {formatPrice(price.price)}
+            <>
+              <span className="flex min-w-0 items-baseline gap-1.5">
+                <span className={productCard.price}>{formatPrice(price.price)}</span>
+                {isReduced && (
+                  <span className={productCard.oldPrice}>{formatPrice(price.oldPrice!)}</span>
+                )}
               </span>
-              {price.oldPrice != null && price.oldPrice > price.price && (
-                <span className="shrink-0 text-[0.6rem] tabular-nums text-muted-foreground line-through">
-                  {formatPrice(price.oldPrice)}
-                </span>
-              )}
-            </span>
-          ) : (
-            <span className="truncate text-[0.6rem] tracking-[0.06em] text-muted-foreground">
-              {t("perfumes.inStock")}
-            </span>
-          )}
-
-          {price ? (
+              <Link
+                to="/offers/$offerId"
+                params={{ offerId: price.offerId }}
+                search={campusSearch(campus)}
+                className={productCard.cta}
+              >
+                {t("product.order")}
+              </Link>
+            </>
+          ) : collection ? (
             <Link
               to="/offers/$offerId"
-              params={{ offerId: price.offerId }}
+              params={{ offerId: collection.offerId }}
               search={campusSearch(campus)}
-              className="shrink-0 rounded-full bg-primary px-2.5 py-1 text-[0.6rem] font-bold tracking-[0.04em] text-primary-foreground transition-opacity hover:opacity-90"
+              className={cn(productCard.quiet, "hover:text-foreground hover:underline")}
+              title={`${t("perfumes.inCollection")}: ${localize(collection.name)}`}
             >
-              {t("perfumes.orderNow")}
+              {t("perfumes.inCollection")}
             </Link>
           ) : (
-            <span className="shrink-0 rounded-full border border-border px-2.5 py-1 text-[0.6rem] font-bold tracking-[0.04em] text-muted-foreground">
-              {t("perfumes.inStock")}
-            </span>
+            <span className={productCard.quiet}>{t("perfumes.inStock")}</span>
           )}
         </div>
       </div>

@@ -2,7 +2,10 @@ import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useLocalized } from "@/lib/use-localized";
 import { useI18n } from "@/lib/i18n";
-import { PriceTag } from "@/components/PriceTag";
+import { formatPrice } from "@/lib/currency";
+import { effectiveOfferPrice, referenceOfferPrice } from "@/lib/data";
+import { productCard } from "@/components/product-card";
+import { campusSearch } from "@/lib/campus";
 import { cn } from "@/lib/utils";
 import type { CatalogOffer } from "@/lib/data";
 
@@ -30,36 +33,35 @@ function useCountdown(endDate: string | null | undefined): TimeLeft {
   return left;
 }
 
-function effectivePrice(offer: CatalogOffer) {
-  if (offer.discount?.enabled && offer.discount.newPrice > 0) return offer.discount.newPrice;
-  return offer.price;
-}
-
-function getOldPrice(offer: CatalogOffer) {
-  if (offer.discount?.enabled) return offer.discount.oldPrice;
-  return offer.oldPrice;
-}
-
 /**
- * A clickable offer/discount card: image, name, short description, price,
- * and a visible "Order" button. For discounts, oldPrice is shown struck-through,
- * a discount badge appears, and a countdown placeholder slot is rendered.
+ * A collection offer presented as a product: image, name, real price, order
+ * action — nothing else.
+ *
+ * An offer is the purchasable entity in the existing data model, so a bundle is
+ * shown as one product with its own Dashboard price and never split across the
+ * perfumes it contains. The marketing paragraph is deliberately gone: the name
+ * says what the product is, and the card uses the same primitives as
+ * `PerfumeCard` so the catalogue and the offers read as one shop.
+ *
+ * `campus` keeps the RAHIQ Campus context alive when an offer is ordered from
+ * the Home shelf.
  */
 export function OfferCard({
   offer,
   withCountdown = false,
+  campus = false,
 }: {
   offer: CatalogOffer;
   withCountdown?: boolean;
+  campus?: boolean;
 }) {
   const localize = useLocalized();
   const { t } = useI18n();
   const name = localize(offer.name);
-  const description = localize(offer.description);
-  const price = effectivePrice(offer);
-  const oldP = getOldPrice(offer);
 
-  const discountPct = oldP != null && oldP > price ? Math.round(((oldP - price) / oldP) * 100) : 0;
+  const price = effectiveOfferPrice(offer);
+  const oldPrice = referenceOfferPrice(offer);
+  const isReduced = oldPrice != null && oldPrice > price;
 
   const showTimer = withCountdown && offer.discount?.showCountdown && offer.discount?.enabled;
   const timeLeft = useCountdown(showTimer ? offer.discount?.endDate : null);
@@ -68,45 +70,31 @@ export function OfferCard({
     <Link
       to="/offers/$offerId"
       params={{ offerId: offer.id }}
-      className="group flex flex-col overflow-hidden rounded-2xl border border-primary/20 bg-card shadow-[0_2px_24px_-18px_oklch(0.145_0_0/0.5)] transition-all duration-500 hover:-translate-y-1 hover:border-primary/50 hover:shadow-[0_10px_40px_-26px_oklch(0.145_0_0/0.6)]"
+      search={campusSearch(campus)}
+      className={productCard.root}
     >
-      <div className="relative aspect-[3/4] overflow-hidden bg-muted">
+      <div className={productCard.media}>
         <img
           src={offer.images[0]}
           alt={name}
-          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+          className={productCard.image}
           loading="lazy"
           decoding="async"
         />
-        {discountPct > 0 && (
-          <span className="absolute start-3 top-3 rounded-full bg-primary px-3 py-1 text-xs font-bold tracking-[0.08em] text-primary-foreground shadow-sm">
-            -{discountPct}%
+        {isReduced && (
+          <span className={cn(productCard.badge, productCard.badgeSolid, productCard.badgeStart)}>
+            -{Math.round(((oldPrice! - price) / oldPrice!) * 100)}%
           </span>
         )}
       </div>
 
-      <div className="flex flex-1 flex-col px-5 pb-6 pt-5 text-center">
-        <h2 className="text-lg font-bold tracking-[0.08em] text-card-foreground">{name}</h2>
-
-        <span
-          className={cn(
-            "mx-auto mt-3 block h-px w-8 bg-primary/40 transition-all duration-500 group-hover:w-14",
-          )}
-          aria-hidden="true"
-        />
-
-        <p className="mt-3 flex-1 text-base font-normal leading-relaxed text-muted-foreground">
-          {description}
-        </p>
-
-        <div className="mt-4">
-          <PriceTag price={price} oldPrice={oldP} className="justify-center" />
-        </div>
+      <div className={productCard.body}>
+        <h2 className={cn(productCard.title, "line-clamp-2")}>{name}</h2>
 
         {showTimer && timeLeft && (
           <div
             dir="ltr"
-            className="mt-4 flex justify-center gap-3 rounded-lg border border-dashed border-border/80 bg-muted/40 px-3 py-2.5"
+            className="mt-2 flex justify-center gap-3 rounded-lg border border-dashed border-border/80 bg-muted/40 px-2 py-2"
           >
             {[
               { value: timeLeft.days, label: t("discounts.timerDays") },
@@ -115,10 +103,10 @@ export function OfferCard({
               { value: timeLeft.seconds, label: t("discounts.timerSeconds") },
             ].map((unit, i) => (
               <div key={i} className="flex flex-col items-center">
-                <span className="text-sm font-semibold tabular-nums tracking-[0.12em] text-foreground">
+                <span className="text-xs font-semibold tabular-nums tracking-[0.1em] text-foreground">
                   {String(unit.value).padStart(2, "0")}
                 </span>
-                <span className="mt-0.5 text-[0.6rem] font-normal tracking-[0.08em] text-muted-foreground">
+                <span className="mt-0.5 text-[0.55rem] tracking-[0.06em] text-muted-foreground">
                   {unit.label}
                 </span>
               </div>
@@ -126,9 +114,15 @@ export function OfferCard({
           </div>
         )}
 
-        <span className="mt-5 inline-flex items-center justify-center rounded-full bg-primary px-6 py-3 text-sm font-bold tracking-[0.12em] text-primary-foreground transition-all duration-300 group-hover:opacity-90">
-          {t("offers.cta")}
-        </span>
+        <div className={productCard.priceRow}>
+          <span className="flex min-w-0 items-baseline gap-1.5">
+            <span className={productCard.price}>{formatPrice(price)}</span>
+            {isReduced && <span className={productCard.oldPrice}>{formatPrice(oldPrice!)}</span>}
+          </span>
+          <span className={productCard.cta} aria-hidden="true">
+            {t("product.order")}
+          </span>
+        </div>
       </div>
     </Link>
   );

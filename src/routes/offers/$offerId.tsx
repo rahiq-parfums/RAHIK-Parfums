@@ -8,10 +8,10 @@ import { useLocalized } from "@/lib/use-localized";
 import { useI18n } from "@/lib/i18n";
 import { meta } from "@/lib/meta";
 import { useOffers, findOfferByParam, type CatalogOffer } from "@/lib/data";
-import { CAMPUS_PARAM_VALUE, isCampusContext } from "@/lib/campus";
+import { CAMPUS_PARAM_VALUE, isCampusContext, type CampusSearch } from "@/lib/campus";
 
 export const Route = createFileRoute("/offers/$offerId")({
-  validateSearch: (search: Record<string, unknown>): { campus?: string } => {
+  validateSearch: (search: Record<string, unknown>): CampusSearch => {
     // The Campus context is carried in the URL so it survives Home → catalogue
     // → order navigation without any global state.
     return isCampusContext(search.campus) ? { campus: CAMPUS_PARAM_VALUE } : {};
