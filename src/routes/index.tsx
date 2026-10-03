@@ -109,16 +109,7 @@ function Index() {
           ) : visibleItems.length > 0 ? (
             <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
               {visibleItems.map((item) => (
-                <PerfumeCard
-                  key={item.perfume.id}
-                  perfume={item.perfume}
-                  campus={isCampus}
-                  price={
-                    item.offer && item.price != null
-                      ? { price: item.price, oldPrice: item.oldPrice }
-                      : undefined
-                  }
-                />
+                <PerfumeCard key={item.perfume.id} perfume={item.perfume} campus={isCampus} />
               ))}
             </div>
           ) : (

@@ -14,6 +14,20 @@ import {
   ConfirmDialog,
 } from "@/components/admin/AdminLayout";
 import { Plus, Pencil, Trash2, Copy, Eye, EyeOff, GripVertical, Star } from "lucide-react";
+import type { PerfumeGender } from "@/lib/catalog";
+
+/** Same three classifications as `perfumes.gender`, reused for offers. */
+const GENDER_OPTIONS: { value: PerfumeGender; label: string }[] = [
+  { value: "women", label: "Women — عطور نسائية" },
+  { value: "men", label: "Men — عطور رجالية" },
+  { value: "unisex", label: "Unisex — للجنسين" },
+];
+
+const GENDER_LABEL: Record<PerfumeGender, string> = {
+  women: "عطور نسائية",
+  men: "عطور رجالية",
+  unisex: "للجنسين",
+};
 
 export const Route = createFileRoute("/admin/offers")({
   head: () => ({ meta: [{ title: "Offers — Admin" }] }),
@@ -31,6 +45,7 @@ type OfferRow = {
   long_desc_en: string;
   main_image: string;
   regular_price: number;
+  gender: PerfumeGender;
   max_quantity: number;
   free_delivery: boolean;
   is_featured: boolean;
@@ -51,6 +66,7 @@ const emptyOffer = (): Partial<OfferRow> => ({
   long_desc_en: "",
   main_image: "",
   regular_price: 0,
+  gender: "unisex",
   max_quantity: 99,
   free_delivery: false,
   is_featured: false,
@@ -117,10 +133,10 @@ function AdminOffersPage() {
       await supabase.from("offer_perfumes").delete().eq("offer_id", offerId!);
       if (offerPerfumes.length > 0) {
         // `offer_perfumes.perfume_id` is what links a set row to a real
-        // catalogue perfume, and it is what lets a perfume card show a price and
-        // an order button. The editor only collects names, so the id is resolved
-        // here from the `perfumes` table. Previously it was never sent, which
-        // wiped the link every time an offer was saved.
+        // catalogue perfume, which is what relates the perfume to this collection
+        // (its "on discount" state). The editor only collects names, so the id is
+        // resolved here from the `perfumes` table. Previously it was never sent,
+        // which wiped the link every time an offer was saved.
         const { data: allPerfumes, error: perfumesError } = await supabase
           .from("perfumes")
           .select("id, name_ar, name_en");
@@ -324,6 +340,30 @@ function AdminOffersPage() {
               </div>
             </AdminField>
 
+            <AdminField
+              label="Category (Gender)"
+              hint="Classifies this collection as Men, Women or Unisex."
+            >
+              <div className="flex flex-wrap gap-2">
+                {GENDER_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() =>
+                      setEditing({ ...editing, gender: option.value })
+                    }
+                    className={`rounded-lg border px-3.5 py-2 text-sm transition-colors ${
+                      (editing.gender ?? "unisex") === option.value
+                        ? "border-primary bg-primary/10 text-foreground"
+                        : "border-border text-muted-foreground hover:border-primary/50"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </AdminField>
+
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
               <AdminField label="Regular Price (DA)" required>
                 <AdminInput type="number" value={editing.regular_price ?? 0} onChange={(e) => setEditing({ ...editing, regular_price: Number(e.target.value) })} />
@@ -380,6 +420,9 @@ function AdminOffersPage() {
                   {o.is_featured && " · Featured"}
                 </p>
               </div>
+              <AdminBadge variant="default">
+                {GENDER_LABEL[o.gender ?? "unisex"]}
+              </AdminBadge>
               <div className="flex items-center gap-2 shrink-0">
                 {o.is_featured && <Star className="h-3.5 w-3.5 text-amber-500" />}
                 <AdminBadge variant={o.is_visible ? "success" : "default"}>{o.is_visible ? "Visible" : "Hidden"}</AdminBadge>

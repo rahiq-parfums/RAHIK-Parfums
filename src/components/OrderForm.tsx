@@ -11,7 +11,20 @@ import { meta } from "@/lib/meta";
 import { generateOrderRef, setOrderSuccessState } from "@/lib/order-success";
 import { cn } from "@/lib/utils";
 
+import type { DeliveryMode, ProductType } from "@/lib/email-service-types";
+
+/**
+ * Any product a customer can order through this form: an Offer package
+ * (`kind: "offer"`) or a single perfume (`kind: "perfume"`).
+ *
+ * `kind` is metadata only — it tells the order email and the analytics events
+ * what was bought. Everything else, the price, the Campus context, delivery,
+ * quantity, email and success flow, is identical for both, so the two product
+ * types share one checkout instead of duplicating it.
+ */
 type OfferProp = {
+  /** Defaults to "offer" so existing call sites keep their current behaviour. */
+  kind?: ProductType;
   id: string;
   name: { ar: string; en: string };
   price: number;
@@ -19,8 +32,6 @@ type OfferProp = {
   maxQuantity?: number;
   discount?: { enabled: boolean; newPrice: number };
 };
-
-import type { DeliveryMode } from "@/lib/email-service-types";
 
 function getEffectivePrice(offer: OfferProp) {
   if (offer.discount?.enabled && offer.discount.newPrice > 0) {
@@ -110,10 +121,12 @@ export function OrderForm({
       : wilayaCode;
 
     const orderRef = generateOrderRef();
+    const productType: ProductType = offer.kind ?? "offer";
 
     const order = {
       offerId: offer.id,
       offerName: lang === "ar" ? offer.name.ar : offer.name.en,
+      productType,
       fullName,
       phone,
       wilaya: isCampus ? "" : wilayaLabel,

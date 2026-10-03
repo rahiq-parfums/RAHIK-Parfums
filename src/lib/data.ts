@@ -19,6 +19,7 @@ type DbPerfume = {
   desc_en: string;
   main_image: string;
   gender: string | null;
+  price: number | null;
   rating_spring: number;
   rating_summer: number;
   rating_autumn: number;
@@ -61,6 +62,7 @@ function dbPerfumeToCatalog(p: DbPerfume): Perfume {
     id: p.slug,
     dbId: p.id,
     gender: toPerfumeGender(p.gender),
+    price: p.price ?? null,
     name: { ar: p.name_ar, en: p.name_en },
     image: p.main_image,
     badges: p.perfume_versions
@@ -115,6 +117,7 @@ type DbOffer = {
   long_desc_en: string;
   main_image: string;
   regular_price: number;
+  gender: string | null;
   max_quantity: number;
   free_delivery: boolean;
   is_featured: boolean;
@@ -162,6 +165,7 @@ export function dbOfferToCatalog(o: DbOffer): CatalogOffer {
 
   return {
     id: o.slug,
+    gender: toPerfumeGender(o.gender),
     name: { ar: o.title_ar, en: o.title_en },
     description: { ar: o.desc_ar, en: o.desc_en },
     longDescription:
@@ -235,42 +239,26 @@ export function referenceOfferPrice(offer: CatalogOffer): number | undefined {
 }
 
 /**
- * Maps a perfume to the first acceptable offer that contains it, so a perfume
- * card can show the real Dashboard price instead of an invented one. Perfumes
- * that are not part of any offer simply have no entry.
+ * Maps each perfume to the first offer that lists it, so a catalogue entry can
+ * be related to the collections it belongs to.
  *
- * The `accept` predicate lets a caller build a second, narrower index — the
- * public catalogue uses it to separate a perfume's *own* price from the price of
- * a collection it merely belongs to.
+ * This is used **only** for the Home "on discount" filter, which follows the
+ * collection an offer-level discount applies to. It is never used for pricing:
+ * a perfume's price comes from `perfumes.price`, and an offer's price buys the
+ * whole set, so the two can never be substituted for one another.
  *
  * The lookup key accepts either form because `offer_perfumes.perfume_id` stores
  * the `perfumes.id` UUID while a `Perfume` is addressed publicly by its slug.
  */
-export function indexOffersByPerfume(
-  offers: CatalogOffer[],
-  accept: (offer: CatalogOffer) => boolean = () => true,
-): Map<string, CatalogOffer> {
+export function indexOffersByPerfume(offers: CatalogOffer[]): Map<string, CatalogOffer> {
   const index = new Map<string, CatalogOffer>();
   for (const offer of offers) {
-    if (!accept(offer)) continue;
     for (const entry of offer.perfumes) {
       if (!entry.perfumeId) continue;
       if (!index.has(entry.perfumeId)) index.set(entry.perfumeId, offer);
     }
   }
   return index;
-}
-
-/**
- * Whether an offer is a product in its own right rather than a bundle.
- *
- * An offer that lists several perfumes sells *the set*: its price buys all of
- * them together, so it can never be presented as the price of one perfume. An
- * offer that lists one perfume — or none, because it is simply a product that
- * happens to be modelled as an offer — is independently purchasable.
- */
-export function isIndividualOffer(offer: CatalogOffer): boolean {
-  return offer.perfumes.length <= 1;
 }
 
 /** Resolves a perfume against the offer index using its UUID, then its slug. */
@@ -286,20 +274,17 @@ export function findOfferForPerfume(
 export type CataloguePerfume = {
   perfume: Perfume;
   /**
-   * The orderable unit for this perfume, set only when the Dashboard sells the
-   * perfume on its own (see `isIndividualOffer`). This is the only thing that
-   * may justify a price or an order button on the perfume card.
+   * The perfume's own selling price, straight from `perfumes.price`. `null`
+   * means the Dashboard has not entered an individual price yet — it is never
+   * filled in from a collection price.
    */
-  offer?: CatalogOffer;
-  price?: number;
-  oldPrice?: number;
-  isDiscounted: boolean;
+  price: number | null;
   /**
-   * The multi-perfume offer this perfume belongs to, when there is one. Its
-   * price covers the whole set, so the card only names the collection instead of
-   * pretending the perfume can be bought on its own.
+   * Whether a collection this perfume belongs to currently carries an active
+   * discount. Drives the Home "on discount" filter only, never the price shown
+   * on the card.
    */
-  collection?: CatalogOffer;
+  isDiscounted: boolean;
 };
 
 /**
@@ -310,11 +295,10 @@ export type CataloguePerfume = {
  * can never drift apart. A product added or edited in the Dashboard appears on
  * both pages automatically.
  *
- * Prices are never fabricated, and an offer price is never stretched across a
- * bundle: a perfume is given a price and an order button only when the Dashboard
- * links it to an offer that sells it alone. When it merely belongs to a
- * collection, the collection is the purchasable product and the perfume card
- * names it instead of showing a price that would buy the whole set.
+ * A perfume is its own product: it is priced from `perfumes.price` and ordered
+ * on its own, and it never borrows a collection's price. Offers remain separate
+ * products priced from `offers.regular_price`, so the two shelves cannot bleed
+ * into each other.
  */
 const EMPTY_PERFUMES: Perfume[] = [];
 const EMPTY_OFFERS: CatalogOffer[] = [];
@@ -326,23 +310,18 @@ export function useCatalogue(visibleOnly = true) {
   const perfumes = perfumesQuery.data ?? EMPTY_PERFUMES;
   const offers = offersQuery.data ?? EMPTY_OFFERS;
   const offerIndex = useMemo(() => indexOffersByPerfume(offers), [offers]);
-  const individualIndex = useMemo(() => indexOffersByPerfume(offers, isIndividualOffer), [offers]);
 
   const items = useMemo<CataloguePerfume[]>(
     () =>
       perfumes.map((perfume) => {
-        const individual = findOfferForPerfume(individualIndex, perfume);
-        const linked = individual ?? findOfferForPerfume(offerIndex, perfume);
+        const collection = findOfferForPerfume(offerIndex, perfume);
         return {
           perfume,
-          offer: individual,
-          price: individual ? effectiveOfferPrice(individual) : undefined,
-          oldPrice: individual ? referenceOfferPrice(individual) : undefined,
-          isDiscounted: Boolean(linked?.discount?.enabled),
-          collection: individual ? undefined : linked,
+          price: perfume.price,
+          isDiscounted: Boolean(collection?.discount?.enabled),
         };
       }),
-    [perfumes, offerIndex, individualIndex],
+    [perfumes, offerIndex],
   );
 
   return {
@@ -405,33 +384,6 @@ export function findPerfumeByParam(
   if (exact) return exact;
   const target = slugKey(raw);
   return perfumes.find((p) => slugKey(p.id) === target);
-}
-
-/**
- * The offer that sells this perfume **on its own**, which is the only thing that
- * may stand behind an individual perfume price or an individual order form.
- *
- * A perfume that only appears inside a multi-perfume offer is deliberately
- * excluded: that offer's price buys the whole set, so it is not this perfume's
- * price and ordering it would silently add perfumes the customer never chose.
- */
-export function individualOfferForPerfume(
-  offers: CatalogOffer[],
-  perfume: Perfume,
-): CatalogOffer | undefined {
-  return findOfferForPerfume(indexOffersByPerfume(offers, isIndividualOffer), perfume);
-}
-
-/**
- * The collection this perfume belongs to, when it is only sold as part of one.
- * Used to name the set without ever presenting it as the perfume's own price.
- */
-export function collectionForPerfume(
-  offers: CatalogOffer[],
-  perfume: Perfume,
-): CatalogOffer | undefined {
-  const index = indexOffersByPerfume(offers, (offer) => !isIndividualOffer(offer));
-  return findOfferForPerfume(index, perfume);
 }
 
 // ─── Contact Settings ─────────────────────────────────────────────────────────

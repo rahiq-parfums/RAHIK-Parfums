@@ -42,6 +42,7 @@ type PerfumeRow = {
   desc_en: string;
   main_image: string;
   gender: PerfumeGender;
+  price: number | null;
   rating_spring: number;
   rating_summer: number;
   rating_autumn: number;
@@ -69,6 +70,7 @@ const emptyPerfume = (): Partial<PerfumeRow> => ({
   desc_en: "",
   main_image: "",
   gender: "unisex",
+  price: null,
   rating_spring: 50,
   rating_summer: 50,
   rating_autumn: 50,
@@ -116,6 +118,7 @@ function AdminProductsPage() {
   const [gallery, setGallery] = useState<GalleryDraft[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<PerfumeRow | null>(null);
   const [search, setSearch] = useState("");
+  const [priceError, setPriceError] = useState<string | null>(null);
 
   const { data: perfumes = [], isLoading } = useQuery({
     queryKey: ["admin-perfumes"],
@@ -320,6 +323,28 @@ function AdminProductsPage() {
             </AdminField>
 
             <AdminField
+              label="Individual Price (DA)"
+              required
+              hint="The price this perfume is sold on its own. It is never taken from a collection offer."
+            >
+              <AdminInput
+                type="number"
+                min={1}
+                step={1}
+                value={editing.price ?? ""}
+                placeholder="e.g. 1500"
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  setEditing({
+                    ...editing,
+                    price: raw === "" ? null : Math.max(0, Math.round(Number(raw))),
+                  });
+                  setPriceError(null);
+                }}
+              />
+            </AdminField>
+
+            <AdminField
               label="Category (Gender)"
               hint="Drives the Women's / Men's filters on the Home page."
             >
@@ -513,12 +538,26 @@ function AdminProductsPage() {
             </div>
 
             <div className="flex gap-3 pt-1">
-              <AdminButton onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
+              <AdminButton
+                onClick={() => {
+                  // A perfume is a product in its own right, so it cannot be
+                  // saved without the price it is sold at.
+                  const price = editing?.price;
+                  if (price == null || price <= 0) {
+                    setPriceError("Enter an individual price greater than 0 DA before saving.");
+                    return;
+                  }
+                  setPriceError(null);
+                  saveMutation.mutate();
+                }}
+                disabled={saveMutation.isPending}
+              >
                 {saveMutation.isPending ? "Saving..." : "Save Perfume"}
               </AdminButton>
               <AdminButton variant="ghost" onClick={() => setEditing(null)}>
                 Cancel
               </AdminButton>
+              {priceError && <span className="text-sm text-red-600">{priceError}</span>}
               {saveMutation.isError && (
                 <span className="text-sm text-red-600">Failed to save. Try again.</span>
               )}
@@ -559,6 +598,14 @@ function AdminProductsPage() {
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   {GENDER_LABEL[p.gender ?? "unisex"]} · {p.versions?.length ?? 0} versions · Score{" "}
                   {p.community_score}%
+                </p>
+              </div>
+              <div className="shrink-0 text-right">
+                <p className="text-sm font-medium tabular-nums text-foreground">
+                  {p.price != null ? `${p.price.toLocaleString()} DA` : "—"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {p.price != null ? "Individual price" : "No price set"}
                 </p>
               </div>
               <div className="flex items-center gap-2 shrink-0">

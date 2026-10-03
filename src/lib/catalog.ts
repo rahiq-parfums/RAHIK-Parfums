@@ -29,6 +29,15 @@ export type Perfume = {
    */
   dbId?: string;
   gender: PerfumeGender;
+  /**
+   * The individual selling price of this perfume, from `perfumes.price`.
+   *
+   * This is a real product price set in the Dashboard, never a collection price
+   * and never derived from an offer. It is `null` only while a newly added or
+   * existing perfume still has no individual price entered, which is why the
+   * customer-facing views must handle it instead of inventing a number.
+   */
+  price: number | null;
   name: Bilingual;
   image: string;
   badges: BadgeKey[];
@@ -43,6 +52,11 @@ export type Perfume = {
 
 export type Offer = {
   id: string;
+  /**
+   * Men / Women / Unisex classification from `offers.gender`, managed in the
+   * Dashboard with the same three values as `PerfumeGender`.
+   */
+  gender: PerfumeGender;
   name: Bilingual;
   description: Bilingual;
   longDescription?: Bilingual;

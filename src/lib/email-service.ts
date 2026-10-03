@@ -15,6 +15,10 @@ export async function sendOrderEmail(order: OrderData): Promise<EmailResult> {
   const payload = {
     offerId: order.offerId,
     offerName: order.offerName,
+    // Tells the order email that this is a single perfume rather than a
+    // collection package. Older orders omit it, so it is sent as undefined
+    // rather than assumed to be "offer".
+    productType: order.productType,
     fullName: order.fullName,
     phone: order.phone,
     wilaya: order.wilaya,
