@@ -11,12 +11,12 @@ export const CAMPUS_IMAGE =
   "https://res.cloudinary.com/wujk2wjc/image/upload/v1790700944/compus_yingzv.jpg";
 
 export const CAMPUS_RESIDENCES: Bilingual[] = [
-  { ar: "الإقامة معالمة 1", en: "University Residence 1" },
-  { ar: "الإقامة معالمة 2", en: "University Residence 2" },
-  { ar: "الإقامة معالمة 3", en: "University Residence 3" },
-  { ar: "الإقامة معالمة 4", en: "University Residence 4" },
-  { ar: "الإقامة معالمة 5", en: "University Residence 5" },
-  { ar: "الإقامة معالمة 6", en: "University Residence 6" },
+  { ar: "الإقامة معالمة 1", en: "Residence Mehalma 1" },
+  { ar: "الإقامة معالمة 2", en: "Residence Mehalma 2" },
+  { ar: "الإقامة معالمة 3", en: "Residence Mehalma 3" },
+  { ar: "الإقامة معالمة 4", en: "Residence Mehalma 4" },
+  { ar: "الإقامة معالمة 5", en: "Residence Mehalma 5" },
+  { ar: "الإقامة معالمة 6", en: "Residence Mehalma 6" },
 ];
 
 /**
