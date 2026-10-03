@@ -187,17 +187,17 @@ function OrderSuccessPage() {
           {/* Navigation */}
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
             <Link
-              to="/offers"
+              to="/"
               className="inline-flex items-center justify-center rounded-xl bg-primary px-7 py-3.5 text-sm font-bold tracking-[0.08em] text-primary-foreground transition-opacity hover:opacity-90"
             >
               {isArabic ? "اكتشف عروضنا" : "Explore our offers"}
             </Link>
 
             <Link
-              to="/"
+              to="/contact"
               className="inline-flex items-center justify-center rounded-xl border border-border bg-background px-7 py-3.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
             >
-              {isArabic ? "العودة للرئيسية" : "Back to home"}
+              {isArabic ? "تواصل" : "Contact"}
             </Link>
           </div>
         </section>
